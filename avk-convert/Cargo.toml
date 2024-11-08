@@ -1,0 +1,8 @@
+[package]
+name = "avk-convert"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+avk-types = { path = "../avk-types" }
+image = "0.25.5"

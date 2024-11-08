@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" media="">
+    <style>
+        * {
+            touch-action: manipulation;
+            -ms-touch-action: manipulation;
+            -webkit-touch-callout: none;
+
+            font-family: Inter, sans-serif;
+            font-weight: 500;
+            font-feature-settings: 'liga' 1, 'calt' 1; /* fix for Chrome */
+        }
+
+        #toolbar {
+            border: solid 1px #000000;
+        }
+        #color-preview {
+            margin: 4px;
+            border: solid 2px #000000;
+            background-color: red;
+            border-radius: 25%;
+            width: 64px;
+            height: 64px;
+        }
+        canvas#draw {
+            border: solid 1px #000000;
+        }
+        #color-tool>.sliders>.slider-pair {
+            display: flex;
+            flex-flow: row nowrap;
+            margin: 0;
+        }
+        #color-tool>.sliders {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            display: flex;
+            flex-flow: column nowrap;
+        }
+        #color-tool {
+            display: flex;
+            flex-flow: row nowrap;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="draw" width="512" height="512"></canvas>
+<div id="toolbar">
+    <div id="color-tool">
+        <div id="color-preview"></div>
+        <div class="sliders">
+            <div class="slider-pair">
+                <input id="color-picker-r" type="range" min="0" max="15" value="15">
+                <label for="color-picker-r">Red</label>
+            </div>
+            <div class="slider-pair">
+                <input id="color-picker-g" type="range" min="0" max="15" value="15">
+                <label for="color-picker-g">Green</label>
+            </div>
+            <div class="slider-pair">
+                <input id="color-picker-b" type="range" min="0" max="15" value="15">
+                <label for="color-picker-b">Blue</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script>
+    const colorPreview = document.getElementById('color-preview');
+    const colorPickerR = document.getElementById('color-picker-r');
+    const colorPickerG = document.getElementById('color-picker-g');
+    const colorPickerB = document.getElementById('color-picker-b');
+
+
+</script>
+
+</html>

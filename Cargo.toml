@@ -1,0 +1,29 @@
+[package]
+name = "avk"
+description = "Addie's Virtual Console"
+version = "1.0.0"
+edition = "2021"
+
+[build-dependencies]
+bindgen = "0.70.1"
+
+[dependencies]
+gl = "0.14.0"
+avk-types = { path = "avk-types" }
+#raw-window-handle = "0.6.2"
+#pollster = "0.4.0"
+log = "0.4.22"
+
+#[profile.dev.package.'*']
+#opt-level = 3
+[profile.release.package.'*']
+opt-level = "z"
+strip = true
+codegen-units = 1
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"
