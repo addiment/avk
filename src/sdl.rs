@@ -10,6 +10,7 @@ use std::ffi::*;
 use std::mem;
 use std::ptr::*;
 use log::debug;
+use crate::gk::GirlsKissing;
 use crate::input::GamepadInput;
 use crate::sdl::sys::*;
 use crate::sdl::window::{NativeWindow, Window};
@@ -139,7 +140,8 @@ unsafe fn panic_sdl_error(format_string: &str) {
 
 pub struct Gman {
 	pub window: Window,
-	gamepads: Vec<(SDL_JoystickID, *mut SDL_Gamepad)>
+	gamepads: Vec<(SDL_JoystickID, *mut SDL_Gamepad)>,
+	pub girls_context: SDL_GLContext
 }
 
 enum SdlProperty<'a> {
@@ -197,8 +199,8 @@ impl <'a> Gman<> {
 		game_identifier: impl Into<String>
 	) -> Self {
 		unsafe {
-			let width: i32 = 640;
-			let height: i32 = 360;
+			let width: i32 = avk_types::RESOLUTION_WIDTH as i32;
+			let height: i32 = avk_types::RESOLUTION_HEIGHT as i32;
 
 			// called before init
 			SDL_SetMainReady();
@@ -213,9 +215,20 @@ impl <'a> Gman<> {
 					game_identifier.as_ptr() as *const c_char
 				);
 			}
+
 			if !SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD) {
 				panic_sdl_error("Failed to initialize SDL!");
 			}
+
+			SDL_GL_SetAttribute(
+				SDL_GLattr_SDL_GL_CONTEXT_PROFILE_MASK,
+				SDL_GLprofile_SDL_GL_CONTEXT_PROFILE_CORE as c_int
+			);
+			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MINOR_VERSION, 4);
+
+			// SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_DOUBLEBUFFER, 1);
+			// SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_DEPTH_SIZE, 16);
 
 			let window_props = SDL_CreateProperties();
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, SdlProperty::Number(width as i64));
@@ -223,7 +236,6 @@ impl <'a> Gman<> {
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, SdlProperty::Bool(false));
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, SdlProperty::Bool(true));
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_ALWAYS_ON_TOP_BOOLEAN, SdlProperty::Bool(true));
-			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_TRANSPARENT_BOOLEAN, SdlProperty::Bool(true));
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_FOCUSABLE_BOOLEAN, SdlProperty::Bool(true));
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, SdlProperty::Bool(true));
 
@@ -233,6 +245,11 @@ impl <'a> Gman<> {
 			}
 
 			SDL_SetWindowMinimumSize(sdl_window, width, height);
+			let girls = SDL_GL_CreateContext(sdl_window);
+			if girls == null_mut() {
+				panic!("no bitches?");
+			}
+			SDL_GL_SetSwapInterval(1);
 
 			let window_props = SDL_GetWindowProperties(sdl_window);
 
@@ -261,6 +278,7 @@ impl <'a> Gman<> {
 			};
 
 			Self {
+				girls_context: girls,
 				window: Window {
 					sdl_window,
 					native_window,
@@ -270,6 +288,18 @@ impl <'a> Gman<> {
 				gamepads: Vec::new()
 			}
 		}
+	}
+
+	pub fn girls_loader(proc: &'static str) -> *const c_void {
+		// null-terminate it
+		let proc = String::from(proc) + "\0";
+		let res = unsafe {
+			SDL_GL_GetProcAddress(proc.as_ptr() as *const c_char)
+				.unwrap_unchecked()
+				as *const c_void
+		};
+		// println!("{proc} @ {:#x}", res as usize);
+		res
 	}
 
 	pub fn update(&mut self) -> bool {
@@ -304,6 +334,11 @@ impl <'a> Gman<> {
 				let mut event: SDL_Event = mem::zeroed();
 				(SDL_PollEvent(&mut event as *mut SDL_Event), event)
 			};
+
+			// swap the girls kissing
+			unsafe {
+				SDL_GL_SwapWindow(self.window.sdl_window);
+			}
 
 			if res {
 				unsafe {

@@ -52,10 +52,9 @@ fn main() {
 		images[1] = Image::from_resource(*include_bytes!("paddle1.avkres"));
 		images[2] = Image::from_resource(*include_bytes!("ball0.avkres"));
 
-		Avk::new(palette, images)
+		Avk::new(images, palette)
 	};
 
 	while avk.update() {
-		
 	}
 }
