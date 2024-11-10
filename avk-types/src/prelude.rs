@@ -3,5 +3,6 @@ pub use crate::{
 	Tile,
 	Sprite,
 	Image,
-	Palette
+	Palette,
+	GamepadInput
 };

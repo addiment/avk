@@ -2,7 +2,6 @@ use std::array;
 use std::collections::HashMap;
 use std::ops::Index;
 use std::ptr::{null,};
-use crate::input::GamepadInput;
 use crate::sdl::Gman;
 
 pub use avk_types::{
@@ -12,6 +11,8 @@ pub use avk_types::{
 	CANVAS_WIDTH,
 	CANVAS_HEIGHT,
 
+	BACKGROUND_CANVAS_SIZE,
+
 	RESOLUTION_SIZE,
 	RESOLUTION_WIDTH,
 	RESOLUTION_HEIGHT,
@@ -20,12 +21,10 @@ pub use avk_types::{
 	MAX_PALETTES,
 	MAX_SPRITES
 };
-
 use avk_types::prelude::*;
 use crate::gk::GirlsKissing;
 
 mod sdl;
-mod input;
 mod tests;
 pub mod prelude;
 mod gk;
@@ -35,8 +34,11 @@ pub struct Avk {
 	palettes: [Palette; MAX_PALETTES],
 	images:	[Image; MAX_IMAGES],
 
-	pub background: [Tile; CANVAS_SIZE],
+	pub background: [Tile; BACKGROUND_CANVAS_SIZE],
 	pub foreground: [Sprite; MAX_SPRITES],
+
+	pub pan_x: f32,
+	pub pan_y: f32,
 
 	input_state: [HashMap<GamepadInput, bool>; 4],
 
@@ -63,10 +65,13 @@ impl Avk {
 			palettes,
 			images,
 
-			background: [Default::default(); CANVAS_SIZE],
+			background: [Default::default(); BACKGROUND_CANVAS_SIZE],
 			foreground: [Default::default(); MAX_SPRITES],
 
 			// input_state: [],
+			pan_x: 0.0,
+			pan_y: 0.0,
+
 			input_state: array::from_fn(|_| { HashMap::with_capacity(16) }),
 			gman,
 			girls_kissing,
@@ -74,7 +79,7 @@ impl Avk {
 	}
 
 	pub fn update(&mut self) -> bool {
-		self.girls_kissing.update();
+		self.girls_kissing.update(self.gman.window.get_width(), self.gman.window.get_height());
 		let should_not_quit = self.gman.update();
 		should_not_quit
 	}
@@ -86,13 +91,5 @@ impl Avk {
 	/// Returns the current time, in milliseconds.
 	pub fn get_time(&self) -> u64 {
 		self.gman.get_ticks_ms()
-	}
-
-	pub fn get_palette(&self, index: usize) -> Palette {
-		self.palettes[index]
-	}
-
-	pub fn get_image(&self, index: usize) -> Image {
-		self.images[index]
 	}
 }

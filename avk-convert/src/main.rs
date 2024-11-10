@@ -8,15 +8,20 @@ use image::{DynamicImage, GenericImageView};
 use avk_types::IMAGE_SIZE;
 use avk_types::prelude::*;
 
-const fn rgba_to_u16(rgba: [u8; 4]) -> u16 {
-    // red
-    (rgba[0] as u16) << 12 |
-        // green
-        (rgba[1] as u16) << 8 |
-        // blue
-        (rgba[2] as u16) << 4 |
-        // alpha
-        (rgba[3] as u16)
+fn rgba_to_u16(mut rgba: [u8; 4]) -> u16 {
+    if rgba[3] > 7 {
+        rgba[3] = 15;
+        // red
+        (rgba[0] as u16) << 12 |
+            // green
+            (rgba[1] as u16) << 8 |
+            // blue
+            (rgba[2] as u16) << 4 |
+            // alpha
+            (rgba[3] as u16)
+    } else {
+        0
+    }
 }
 
 const fn u16_to_rgba(color: u16) -> [u8; 4] {
@@ -51,13 +56,13 @@ fn generate_image_palette(img: &[[u8; 4]; IMAGE_SIZE as usize * IMAGE_SIZE as us
             eprintln!("Too many colors in the provided image!");
             return None;
         } else {
+            *gen_palette_iter += 1;
             // add the new color to the palette
             gen_palette.0[*gen_palette_iter] = ru16;
             // update the pixel
             gen_image.0[gen_image_iter] = *gen_palette_iter as u8;
             // increase the iterators
             gen_image_iter += 1;
-            *gen_palette_iter += 1;
         }
     }
 
@@ -100,7 +105,6 @@ fn main() {
 
         let gi = generate_image_palette(&a.try_into().unwrap(), &mut gp, &mut gpi).unwrap();
         // println!("{:?}", gp.0.map(|c| u16_to_rgba(c)));
-        println!("{:?}", gp.0);
 
         let output_filename = String::from(filename.file_stem().unwrap().to_str().unwrap()) + &*i.to_string() + ".avkres";
         let mut output_file = File::create(output_filename).unwrap();
@@ -114,4 +118,5 @@ fn main() {
             // gi.0.iter().enumerate()
         ).unwrap();
     }
+    println!("{:?}", gp.0);
 }

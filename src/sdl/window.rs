@@ -33,6 +33,10 @@ impl Window {
 			SDL_SetWindowSize(self.sdl_window,self.width as c_int, self.height as c_int);
 		}
 	}
+	#[inline]
+	pub fn get_width(&self) -> u32 {
+		self.width
+	}
 
 	pub fn set_height(&mut self, h: u32) {
 		self.height = h;
@@ -40,6 +44,12 @@ impl Window {
 			SDL_SetWindowSize(self.sdl_window,self.width as c_int, self.height as c_int);
 		}
 	}
+
+	#[inline]
+	pub fn get_height(&self) -> u32 {
+		self.height
+	}
+
 	
 	pub fn set_title(&mut self, title: impl Into<String>) {
 		unsafe {

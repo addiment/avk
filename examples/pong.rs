@@ -1,6 +1,5 @@
 use avk::prelude::*;
 
-
 #[repr(u8)]
 enum SpriteIndex {
 	PaddleWestNorth,
@@ -45,7 +44,7 @@ fn main() {
 
 		let mut palette: [Palette; 16] = [Palette::empty(); 16];
 
-		palette[0] = Palette([15, 65520, 65535, 64767, 27903, 0, 0, 0]);
+		palette[0] = Palette([15, 65535, 64767, 27903, 0, 0, 0, 0]);
 
 		let mut images: [Image; 256] = [Image::empty(); 256];
 		images[0] = Image::from_resource(*include_bytes!("paddle0.avkres"));
@@ -56,5 +55,6 @@ fn main() {
 	};
 
 	while avk.update() {
+		let input = avk.get_input(Player::Alpha);
 	}
 }

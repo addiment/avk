@@ -7,8 +7,6 @@ in highp vec2 texCoord;
 uniform sampler2D sprite;
 
 void main() {
-    // fragColor = texture(sprite, texCoord);
-    // fragColor = texture(sprite, texCoord);
-    //fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-    fragColor = vec4(texCoord.x, texCoord.y, 0.0, 1.0);
+    float red = texture(sprite, 1.0 - texCoord).r;
+    fragColor = vec4(red * 64.0, 0.0, 0.0, 1.0);
 }

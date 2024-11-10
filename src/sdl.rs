@@ -10,8 +10,7 @@ use std::ffi::*;
 use std::mem;
 use std::ptr::*;
 use log::debug;
-use crate::gk::GirlsKissing;
-use crate::input::GamepadInput;
+use avk_types::prelude::*;
 use crate::sdl::sys::*;
 use crate::sdl::window::{NativeWindow, Window};
 
@@ -199,8 +198,8 @@ impl <'a> Gman<> {
 		game_identifier: impl Into<String>
 	) -> Self {
 		unsafe {
-			let width: i32 = avk_types::RESOLUTION_WIDTH as i32;
-			let height: i32 = avk_types::RESOLUTION_HEIGHT as i32;
+			let width: i32 = avk_types::RESOLUTION_WIDTH as i32 * 4;
+			let height: i32 = avk_types::RESOLUTION_HEIGHT as i32 * 4;
 
 			// called before init
 			SDL_SetMainReady();
@@ -235,7 +234,7 @@ impl <'a> Gman<> {
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, SdlProperty::Number(height as i64));
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, SdlProperty::Bool(false));
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, SdlProperty::Bool(true));
-			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_ALWAYS_ON_TOP_BOOLEAN, SdlProperty::Bool(true));
+			// set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_ALWAYS_ON_TOP_BOOLEAN, SdlProperty::Bool(true));
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_FOCUSABLE_BOOLEAN, SdlProperty::Bool(true));
 			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, SdlProperty::Bool(true));
 
@@ -244,7 +243,7 @@ impl <'a> Gman<> {
 				panic_sdl_error("Failed to create window!");
 			}
 
-			SDL_SetWindowMinimumSize(sdl_window, width, height);
+			// SDL_SetWindowMinimumSize(sdl_window, width, height);
 			let girls = SDL_GL_CreateContext(sdl_window);
 			if girls == null_mut() {
 				panic!("no bitches?");

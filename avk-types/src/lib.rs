@@ -10,6 +10,11 @@ pub const CANVAS_HEIGHT: u16 = 12; // tiles/screen
 /// The total tile count of the canvas.
 pub const CANVAS_SIZE: usize = CANVAS_WIDTH as usize * CANVAS_HEIGHT as usize; // 192
 
+pub const BACKGROUND_CANVAS_WIDTH: u16 = 18;
+pub const BACKGROUND_CANVAS_HEIGHT: u16 = 14;
+pub const BACKGROUND_CANVAS_SIZE: usize =
+    BACKGROUND_CANVAS_WIDTH as usize * BACKGROUND_CANVAS_HEIGHT as usize;
+
 /// Pixels per row of the canvas.
 pub const RESOLUTION_WIDTH: u16 = IMAGE_SIZE * CANVAS_WIDTH;
 /// Pixels per column of the canvas
@@ -96,4 +101,23 @@ impl Palette {
     pub const fn empty() -> Self {
         Self([0; 8])
     }
+}
+
+#[derive(Copy, Clone, Eq, Hash, PartialEq)]
+pub enum GamepadInput {
+    DirUp,
+    DirRight,
+    DirDown,
+    DirLeft,
+
+    FaceUp,
+    FaceRight,
+    FaceDown,
+    FaceLeft,
+
+    BumperLeft,
+    BumperRight,
+
+    Select,
+    Start,
 }
