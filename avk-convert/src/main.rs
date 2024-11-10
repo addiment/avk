@@ -1,41 +1,10 @@
-use std::collections::HashMap;
 use std::env::args;
-use std::ffi::OsStr;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{Write};
 use std::path::Path;
-use image::{DynamicImage, GenericImageView};
-use avk_types::IMAGE_SIZE;
+use image::{GenericImageView};
+use avk_types::{rgba_to_u16, IMAGE_SIZE};
 use avk_types::prelude::*;
-
-fn rgba_to_u16(mut rgba: [u8; 4]) -> u16 {
-    if rgba[3] > 7 {
-        rgba[3] = 15;
-        // red
-        (rgba[0] as u16) << 12 |
-            // green
-            (rgba[1] as u16) << 8 |
-            // blue
-            (rgba[2] as u16) << 4 |
-            // alpha
-            (rgba[3] as u16)
-    } else {
-        0
-    }
-}
-
-const fn u16_to_rgba(color: u16) -> [u8; 4] {
-    [
-        // red
-        ((color & 0b1111_0000_0000_0000) >> 12) as u8,
-        // green
-        ((color & 0b0000_1111_0000_0000) >> 8) as u8,
-        // blue
-        ((color & 0b0000_0000_1111_0000) >> 4) as u8,
-        // alpha
-        (color & 0b0000_0000_0000_1111) as u8,
-    ]
-}
 
 fn generate_image_palette(img: &[[u8; 4]; IMAGE_SIZE as usize * IMAGE_SIZE as usize], gen_palette: &mut Palette, gen_palette_iter: &mut usize) -> Option<Image> {
     let mut gen_image = Image::empty();
@@ -46,9 +15,11 @@ fn generate_image_palette(img: &[[u8; 4]; IMAGE_SIZE as usize * IMAGE_SIZE as us
             |c| ((c as f32) / 255.0 * 15.0).round() as u8 & 0b1111
         );
         let ru16 = rgba_to_u16(rounded);
+        // println!("ru16 = {ru16}");
 
         let palette_index = gen_palette.0.iter().position(|c| *c == ru16);
         if let Some(palette_index) = palette_index {
+            // println!("index = {palette_index}");
             // update the pixel
             gen_image.0[gen_image_iter] = palette_index as u8;
             gen_image_iter += 1;
@@ -57,6 +28,7 @@ fn generate_image_palette(img: &[[u8; 4]; IMAGE_SIZE as usize * IMAGE_SIZE as us
             return None;
         } else {
             *gen_palette_iter += 1;
+            // println!("index = {}", gen_palette_iter);
             // add the new color to the palette
             gen_palette.0[*gen_palette_iter] = ru16;
             // update the pixel

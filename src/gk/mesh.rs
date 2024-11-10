@@ -3,8 +3,10 @@ use std::ptr::null;
 use gl::types::{GLfloat, GLsizei, GLsizeiptr, GLuint, GLushort};
 use crate::gk::err_check;
 
+#[derive(Copy, Clone)]
 pub(crate) struct Mesh {
-	vertex_count: usize,
+	_vertex_count: usize,
+	tri_count: usize,
 	vao: GLuint,
 	vbo: GLuint,
 	ebo: GLuint,
@@ -12,6 +14,10 @@ pub(crate) struct Mesh {
 
 impl Mesh {
 	pub fn new(vertex_count: usize, vertex_data: &[GLfloat], element_data: &[GLushort]) -> Self {
+		if element_data.len() % 3 != 0 {
+			panic!("vertex element data can't be used to draw triangles (length % 3 != 0)")
+		}
+
 		let mut buffers = [0; 2];
 		unsafe {
 			gl::GenBuffers(buffers.len() as GLsizei, &mut buffers as *mut GLuint);
@@ -58,7 +64,8 @@ impl Mesh {
 		}
 
 		Self {
-			vertex_count,
+			_vertex_count: vertex_count,
+			tri_count: element_data.len() / 3,
 			vao,
 			vbo,
 			ebo,
@@ -70,7 +77,7 @@ impl Mesh {
 			gl::BindVertexArray(self.vao);
 			gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
 			gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
-			gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_SHORT, null());
+			gl::DrawElements(gl::TRIANGLES, (self.tri_count * 3) as GLsizei, gl::UNSIGNED_SHORT, null());
 		}
 	}
 }

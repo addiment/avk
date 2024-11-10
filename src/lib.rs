@@ -1,7 +1,5 @@
 use std::array;
 use std::collections::HashMap;
-use std::ops::Index;
-use std::ptr::{null,};
 use crate::sdl::Gman;
 
 pub use avk_types::{
@@ -24,14 +22,14 @@ pub use avk_types::{
 use avk_types::prelude::*;
 use crate::gk::GirlsKissing;
 
-mod sdl;
-mod tests;
 pub mod prelude;
+mod sdl;
 mod gk;
 
 /// The instance struct.
 pub struct Avk {
 	palettes: [Palette; MAX_PALETTES],
+	boot_images: [Image; 4],
 	images:	[Image; MAX_IMAGES],
 
 	pub background: [Tile; BACKGROUND_CANVAS_SIZE],
@@ -47,7 +45,7 @@ pub struct Avk {
 }
 
 impl Avk {
-	pub fn new(mut images: [Image; MAX_IMAGES], mut palettes: [Palette; MAX_PALETTES]) -> Self {
+	pub fn init(mut images: [Image; MAX_IMAGES], mut palettes: [Palette; MAX_PALETTES]) -> Self {
 
 		let gman = Gman::new(
 			"AK Virtual Console",
@@ -65,6 +63,13 @@ impl Avk {
 			palettes,
 			images,
 
+			boot_images: [
+				Image::from_resource(*include_bytes!("icon0.avkres")),
+				Image::from_resource(*include_bytes!("icon1.avkres")),
+				Image::empty(),
+				Image::empty(),
+			],
+
 			background: [Default::default(); BACKGROUND_CANVAS_SIZE],
 			foreground: [Default::default(); MAX_SPRITES],
 
@@ -79,7 +84,13 @@ impl Avk {
 	}
 
 	pub fn update(&mut self) -> bool {
-		self.girls_kissing.update(self.gman.window.get_width(), self.gman.window.get_height());
+		let this = self as *mut Self;
+		self.girls_kissing.update(
+			this,
+			self.gman.window.get_width(),
+			self.gman.window.get_height()
+		);
+
 		let should_not_quit = self.gman.update();
 		should_not_quit
 	}

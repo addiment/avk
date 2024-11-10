@@ -248,7 +248,7 @@ impl <'a> Gman<> {
 			if girls == null_mut() {
 				panic!("no bitches?");
 			}
-			SDL_GL_SetSwapInterval(1);
+			SDL_GL_SetSwapInterval(0);
 
 			let window_props = SDL_GetWindowProperties(sdl_window);
 
@@ -318,8 +318,8 @@ impl <'a> Gman<> {
 				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_DOWN => Some((GamepadInput::DirDown, down)),
 				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_LEFT => Some((GamepadInput::DirLeft, down)),
 
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_LEFT_SHOULDER => Some((GamepadInput::BumperLeft, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER => Some((GamepadInput::BumperRight, down)),
+				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_LEFT_SHOULDER => Some((GamepadInput::TriggerLeft, down)),
+				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER => Some((GamepadInput::TriggerRight, down)),
 
 				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_BACK => Some((GamepadInput::Select, down)),
 				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_START => Some((GamepadInput::Start, down)),
@@ -436,13 +436,13 @@ impl <'a> Gman<> {
 		}
 	}
 
-	/// Returns the number of nanoseconds elapsed since the engine start.
-	#[inline(always)]
-	pub fn get_ticks_ns(&self) -> u64 {
-		unsafe {
-			SDL_GetTicksNS()
-		}
-	}
+	// /// Returns the number of nanoseconds elapsed since the engine start.
+	// #[inline(always)]
+	// pub fn get_ticks_ns(&self) -> u64 {
+	// 	unsafe {
+	// 		SDL_GetTicksNS()
+	// 	}
+	// }
 }
 
 impl <'a> Drop for Gman<> {

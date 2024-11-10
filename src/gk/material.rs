@@ -2,10 +2,11 @@ use std::ptr::{null, null_mut};
 use crate::gk::err_check;
 use gl::types::{GLchar, GLsizei, GLuint};
 
+#[derive(Copy, Clone)]
 pub(crate) struct Material {
 	prog: GLuint,
-	frag: GLuint,
-	vert: GLuint,
+	// frag: GLuint,
+	// vert: GLuint,
 }
 
 impl Material {
@@ -63,8 +64,8 @@ impl Material {
 
 		Self {
 			prog,
-			frag,
-			vert,
+			// frag,
+			// vert,
 		}
 	}
 
@@ -82,6 +83,20 @@ impl Material {
 				u_pos_loc,
 				x,
 				y,
+			);
+		}
+	}
+
+	pub fn set_uniform_vec4(&mut self, name: impl Into<String>, x: f32, y: f32, z: f32, w: f32) {
+		unsafe {
+			let string = name.into() + "\0";
+			let u_pos_loc = gl::GetUniformLocation(self.prog, string.as_ptr() as *const GLchar);
+			gl::Uniform4f(
+				u_pos_loc,
+				x,
+				y,
+				z,
+				w
 			);
 		}
 	}

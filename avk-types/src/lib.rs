@@ -10,8 +10,8 @@ pub const CANVAS_HEIGHT: u16 = 12; // tiles/screen
 /// The total tile count of the canvas.
 pub const CANVAS_SIZE: usize = CANVAS_WIDTH as usize * CANVAS_HEIGHT as usize; // 192
 
-pub const BACKGROUND_CANVAS_WIDTH: u16 = 18;
-pub const BACKGROUND_CANVAS_HEIGHT: u16 = 14;
+pub const BACKGROUND_CANVAS_WIDTH: u16 = CANVAS_WIDTH + 2;
+pub const BACKGROUND_CANVAS_HEIGHT: u16 = CANVAS_HEIGHT + 2;
 pub const BACKGROUND_CANVAS_SIZE: usize =
     BACKGROUND_CANVAS_WIDTH as usize * BACKGROUND_CANVAS_HEIGHT as usize;
 
@@ -45,22 +45,49 @@ impl Player {
 }
 
 // tile_id, palette_id, x, y
+// TODO: pleeeeeeeeeeeeease fix the alignment and visibility...
 #[derive(Default, Copy, Clone)]
 pub struct Sprite {
     /// The tile ID. Every bit is needed, as there are 256 images max
-    image_id: u8,
-    /// Palette ID (4 bits) | flip-X (1 bit) | flip-Y (1 bit) | scale (1 bit) | blend (1 bit)
-    palette_transform: u8,
-    x: u16,
-    y: u16,
+    pub image_id: u8,
+    // TODO: this is bad! icky!
+    /// padding (2 bits) | flip-X (1 bit) | flip-Y (1 bit) | Palette ID (4 bits)
+    pub palette_transform: u8,
+    pub x: u16,
+    pub y: u16,
 }
 
 impl Sprite {
-    pub fn get_image_id(&self) -> u8 {
-        self.image_id
-    }
+    pub const FLIP_X_MASK: u8 = 0b0010_0000;
+    pub const FLIP_Y_MASK: u8 = 0b0001_0000;
+    pub const PALETTE_MASK: u8 = 0b1111;
+
     pub fn get_palette_id(&self) -> u8 {
-        self.palette_transform
+        self.palette_transform & Self::PALETTE_MASK
+    }
+
+    pub fn get_flip_x(&self) -> bool {
+        self.palette_transform & Self::FLIP_X_MASK != 0
+    }
+
+    pub fn get_flip_y(&self) -> bool {
+        self.palette_transform & Self::FLIP_Y_MASK != 0
+    }
+
+    pub fn set_flip_x(&mut self, flip: bool) {
+        if flip {
+            self.palette_transform |= Self::FLIP_X_MASK;
+        } else {
+            self.palette_transform &= !Self::FLIP_X_MASK;
+        }
+    }
+
+    pub fn set_flip_y(&mut self, flip: bool) {
+        if flip {
+            self.palette_transform |= Self::FLIP_Y_MASK;
+        } else {
+            self.palette_transform &= !Self::FLIP_Y_MASK;
+        }
     }
 }
 
@@ -115,9 +142,38 @@ pub enum GamepadInput {
     FaceDown,
     FaceLeft,
 
-    BumperLeft,
-    BumperRight,
+    TriggerLeft,
+    TriggerRight,
 
     Select,
     Start,
+}
+
+pub fn rgba_to_u16(mut rgba: [u8; 4]) -> u16 {
+    if rgba[3] > 7 {
+        rgba[3] = 15;
+        // red
+        (rgba[0] as u16) << 12 |
+            // green
+            (rgba[1] as u16) << 8 |
+            // blue
+            (rgba[2] as u16) << 4 |
+            // alpha
+            (rgba[3] as u16)
+    } else {
+        0
+    }
+}
+
+pub const fn u16_to_rgba(color: u16) -> [u8; 4] {
+    [
+        // red
+        ((color & 0b1111_0000_0000_0000) >> 12) as u8,
+        // green
+        ((color & 0b0000_1111_0000_0000) >> 8) as u8,
+        // blue
+        ((color & 0b0000_0000_1111_0000) >> 4) as u8,
+        // alpha
+        (color & 0b0000_0000_0000_1111) as u8,
+    ]
 }
