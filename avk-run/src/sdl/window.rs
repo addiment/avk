@@ -36,7 +36,7 @@ impl Window {
 			if gl_context == null_mut() {
 				panic!("no bitches?");
 			}
-			SDL_GL_SetSwapInterval(0);
+			SDL_GL_SetSwapInterval(1);
 
 			Window {
 				sdl_window,

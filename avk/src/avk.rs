@@ -11,6 +11,7 @@ pub struct AvkRaw {
 	pub foreground: [Sprite; MAX_SPRITES],
 }
 
+/// Rust wrapper around the C ABI to use the raw Rust library.
 pub struct Avk {
 	raw: *mut AvkRaw,
 }

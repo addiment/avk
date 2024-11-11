@@ -204,6 +204,8 @@ impl GirlsKissing {
 			gl::BindTexture(gl::TEXTURE_2D, self.fbt);
 			self.viewport_quad.draw();
 
+			gl::Finish();
+
 			err_check();
 		}
 	}
