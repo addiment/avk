@@ -1,8 +1,12 @@
 [package]
-name = "avk-convert"
+name = "sample-project"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "pong"
+crate-type = ["cdylib"]
+
 [dependencies]
 avk-types = { path = "../avk" }
-image = "0.25.5"
+libm = "0.2.11"

@@ -12,7 +12,7 @@ use std::ptr::*;
 use log::debug;
 use avk_types::prelude::*;
 use crate::sdl::sys::*;
-use crate::sdl::window::{NativeWindow, Window};
+use crate::sdl::window::{Window};
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 #[non_exhaustive]
@@ -140,7 +140,6 @@ unsafe fn panic_sdl_error(format_string: &str) {
 pub struct Gman {
 	pub window: Window,
 	gamepads: Vec<(SDL_JoystickID, *mut SDL_Gamepad)>,
-	pub girls_context: SDL_GLContext
 }
 
 enum SdlProperty<'a> {
@@ -191,27 +190,50 @@ unsafe fn set_sdl_prop(props: SDL_PropertiesID, key: &[u8], value: SdlProperty) 
 	}
 }
 
+unsafe fn process_gamepad_button(event: &SDL_Event, down: bool) -> Option<(GamepadInput, bool)> {
+	match event.gbutton.button as c_int {
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_NORTH => Some((GamepadInput::FaceUp, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_EAST  => Some((GamepadInput::FaceRight, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_SOUTH => Some((GamepadInput::FaceDown, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_WEST  => Some((GamepadInput::FaceLeft, down)),
+
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_UP => Some((GamepadInput::DirUp, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_RIGHT => Some((GamepadInput::DirRight, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_DOWN => Some((GamepadInput::DirDown, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_LEFT => Some((GamepadInput::DirLeft, down)),
+
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_LEFT_SHOULDER => Some((GamepadInput::TriggerLeft, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER => Some((GamepadInput::TriggerRight, down)),
+
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_BACK => Some((GamepadInput::Menu, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_START => Some((GamepadInput::Menu, down)),
+
+		_ => None,
+	}
+}
+
 impl <'a> Gman<> {
 	pub fn new(
-		game_name: impl Into<String>,
-		game_version: impl Into<String>,
-		game_identifier: impl Into<String>
+		app_name: impl Into<String>,
+		app_version: impl Into<String>,
+		app_identifier: impl Into<String>
 	) -> Self {
 		unsafe {
-			let width: i32 = avk_types::RESOLUTION_WIDTH as i32 * 4;
-			let height: i32 = avk_types::RESOLUTION_HEIGHT as i32 * 4;
+			let width: i32 = avk_types::RESOLUTION_WIDTH as i32 * 2;
+			let height: i32 = avk_types::RESOLUTION_HEIGHT as i32 * 2;
 
 			// called before init
 			SDL_SetMainReady();
 			// SDL_SetLogPriorities(SDL_LogPriority_SDL_LOG_PRIORITY_TRACE);
+
 			{
-				let game_name = game_name.into() + "\0";
-				let game_version = game_version.into() + "\0";
-				let game_identifier = game_identifier.into() + "\0";
+				let app_name = app_name.into() + "\0";
+				let app_version = app_version.into() + "\0";
+				let app_identifier = app_identifier.into() + "\0";
 				SDL_SetAppMetadata(
-					game_name.as_ptr() as *const c_char,
-					game_version.as_ptr() as *const c_char,
-					game_identifier.as_ptr() as *const c_char
+					app_name.as_ptr() as *const c_char,
+					app_version.as_ptr() as *const c_char,
+					app_identifier.as_ptr() as *const c_char
 				);
 			}
 
@@ -219,71 +241,16 @@ impl <'a> Gman<> {
 				panic_sdl_error("Failed to initialize SDL!");
 			}
 
-			SDL_GL_SetAttribute(
-				SDL_GLattr_SDL_GL_CONTEXT_PROFILE_MASK,
-				SDL_GLprofile_SDL_GL_CONTEXT_PROFILE_CORE as c_int
-			);
+			// set OpenGL attributes
+			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_PROFILE_MASK, SDL_GLprofile_SDL_GL_CONTEXT_PROFILE_CORE as c_int);
 			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MINOR_VERSION, 4);
+			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_DOUBLEBUFFER, 0);
 
-			// SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_DOUBLEBUFFER, 1);
-			// SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_DEPTH_SIZE, 16);
-
-			let window_props = SDL_CreateProperties();
-			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, SdlProperty::Number(width as i64));
-			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, SdlProperty::Number(height as i64));
-			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, SdlProperty::Bool(false));
-			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, SdlProperty::Bool(true));
-			// set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_ALWAYS_ON_TOP_BOOLEAN, SdlProperty::Bool(true));
-			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_FOCUSABLE_BOOLEAN, SdlProperty::Bool(true));
-			set_sdl_prop(window_props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, SdlProperty::Bool(true));
-
-			let sdl_window = SDL_CreateWindowWithProperties(window_props);
-			if sdl_window == null_mut() {
-				panic_sdl_error("Failed to create window!");
-			}
-
-			// SDL_SetWindowMinimumSize(sdl_window, width, height);
-			let girls = SDL_GL_CreateContext(sdl_window);
-			if girls == null_mut() {
-				panic!("no bitches?");
-			}
-			SDL_GL_SetSwapInterval(0);
-
-			let window_props = SDL_GetWindowProperties(sdl_window);
-
-			let native_window= if cfg!(target_os = "linux") {
-				let driver = CStr::from_ptr(SDL_GetCurrentVideoDriver() as *mut c_char).to_str().unwrap();
-				if driver == "x11" {
-					NativeWindow::X11 {
-						window: SDL_GetNumberProperty(window_props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER.as_ptr() as *const c_char, 0),
-						display: SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER.as_ptr() as *const c_char, null_mut()),
-						screen: SDL_GetNumberProperty(window_props, SDL_PROP_WINDOW_X11_SCREEN_NUMBER.as_ptr() as *const c_char, 0),
-					}
-				} else if driver == "wayland" {
-					NativeWindow::Wayland {
-						window: SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER.as_ptr() as *const c_char, null_mut()),
-						display: SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER.as_ptr() as *const c_char, null_mut()),
-					}
-				} else {
-					panic!("Unknown Linux video driver \"{driver}\"!");
-				}
-			} else if cfg!(target_os = "windows") {
-				NativeWindow::Win32 {
-					hwnd: SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WIN32_HWND_POINTER.as_ptr() as *const c_char, null_mut()),
-				}
-			} else {
-				panic!("Unimplemented window support for current platform!");
-			};
+			let window = Window::init(width, height);
 
 			Self {
-				girls_context: girls,
-				window: Window {
-					sdl_window,
-					native_window,
-					width: width as u32,
-					height: height as u32,
-				},
+				window,
 				gamepads: Vec::new()
 			}
 		}
@@ -306,40 +273,20 @@ impl <'a> Gman<> {
 			SDL_ShowWindow(self.window.sdl_window);
 		}
 
-		unsafe fn process_gamepad_button(event: &SDL_Event, down: bool) -> Option<(GamepadInput, bool)> {
-			match event.gbutton.button as c_int {
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_NORTH => Some((GamepadInput::FaceUp, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_EAST  => Some((GamepadInput::FaceRight, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_SOUTH => Some((GamepadInput::FaceDown, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_WEST  => Some((GamepadInput::FaceLeft, down)),
-
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_UP => Some((GamepadInput::DirUp, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_RIGHT => Some((GamepadInput::DirRight, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_DOWN => Some((GamepadInput::DirDown, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_LEFT => Some((GamepadInput::DirLeft, down)),
-
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_LEFT_SHOULDER => Some((GamepadInput::TriggerLeft, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER => Some((GamepadInput::TriggerRight, down)),
-
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_BACK => Some((GamepadInput::Select, down)),
-				SDL_GamepadButton_SDL_GAMEPAD_BUTTON_START => Some((GamepadInput::Start, down)),
-
-				_ => None,
-			}
-		}
-
+		// poll events
 		loop {
-			let (res, event) = unsafe {
+			// poll
+			let (has_event, event) = unsafe {
 				let mut event: SDL_Event = mem::zeroed();
 				(SDL_PollEvent(&mut event as *mut SDL_Event), event)
 			};
 
-			// swap the girls kissing
+			// swap the framebuffer
 			unsafe {
 				SDL_GL_SwapWindow(self.window.sdl_window);
 			}
 
-			if res {
+			if has_event {
 				unsafe {
 					match event.type_ {
 						SDL_EventType_SDL_EVENT_QUIT => {
@@ -435,14 +382,6 @@ impl <'a> Gman<> {
 			SDL_GetTicks()
 		}
 	}
-
-	// /// Returns the number of nanoseconds elapsed since the engine start.
-	// #[inline(always)]
-	// pub fn get_ticks_ns(&self) -> u64 {
-	// 	unsafe {
-	// 		SDL_GetTicksNS()
-	// 	}
-	// }
 }
 
 impl <'a> Drop for Gman<> {

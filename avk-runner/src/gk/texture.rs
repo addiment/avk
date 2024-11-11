@@ -1,7 +1,8 @@
 use std::array::from_fn;
 use std::ffi::c_void;
 use gl::types::{GLint, GLsizei, GLuint};
-use avk_types::{Image, IMAGE_SIZE, MAX_IMAGES};
+use avk_types::{IMAGE_SIZE, MAX_IMAGES};
+use avk_types::prelude::Image;
 
 #[derive(Copy, Clone)]
 pub(crate) struct Texture {

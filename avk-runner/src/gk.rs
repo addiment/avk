@@ -150,7 +150,7 @@ impl GirlsKissing {
 
 			// gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
 
-			for sprite in (*avk).foreground {
+			for sprite in (*avk).raw.foreground {
 				// let image_id = sprite.image_id;
 				let palette_id = sprite.get_palette_id();
 
