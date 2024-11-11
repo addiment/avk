@@ -6,21 +6,21 @@ use avk_run::Avk;
 use avk_types::{AvkRaw, GamepadInput, Player, BACKGROUND_CANVAS_SIZE, MAX_SPRITES};
 use avk_types::prelude::{Image, Palette};
 
-
 #[no_mangle]
 extern "C" fn avk_init(images: *const Image, palettes: *const Palette) -> *mut AvkRaw {
     unsafe {
-        let avk: Box<Avk> = Box::new(Avk::init(
+        let mut avk: Box<Avk> = Box::new(Avk::init(
             mem::transmute(images),
             mem::transmute(palettes)
         ));
-        let raw = Box::new(AvkRaw {
+        let mut raw = Box::new(AvkRaw {
             internal: (avk.as_ref() as *const Avk) as *mut c_void,
             background: [Default::default(); BACKGROUND_CANVAS_SIZE],
             foreground: [Default::default(); MAX_SPRITES],
         });
-        Box::leak(avk);
-        Box::leak(raw)
+        avk.raw = raw.as_mut() as *mut AvkRaw;
+        Box::leak::<'static>(avk);
+        Box::leak::<'static>(raw)
     }
 }
 

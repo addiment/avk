@@ -1,7 +1,7 @@
 use std::array;
 use std::collections::HashMap;
 use std::mem::ManuallyDrop;
-use std::ptr::null_mut;
+use std::ptr::{null, null_mut};
 use crate::sdl::Gman;
 
 pub use avk_types::{
@@ -31,7 +31,7 @@ mod gk;
 
 /// The instance struct.
 pub struct Avk {
-	raw: AvkRaw,
+	pub raw: *mut AvkRaw,
 	palettes: [Palette; MAX_PALETTES],
 	boot_images: [Image; 4],
 	images:	[Image; MAX_IMAGES],
@@ -47,7 +47,6 @@ pub struct Avk {
 
 impl Avk {
 	pub fn init(images: &[Image; MAX_IMAGES], palettes: &[Palette; MAX_PALETTES]) -> Self {
-
 		let mut images = images.clone();
 		let mut palettes = palettes.clone();
 		let gman = Gman::new(
@@ -73,11 +72,7 @@ impl Avk {
 				Image::empty(),
 			],
 
-			raw: AvkRaw {
-				internal: null_mut(),
-				background: [Default::default(); BACKGROUND_CANVAS_SIZE],
-				foreground: [Default::default(); MAX_SPRITES],
-			},
+			raw: null_mut(),
 
 			// input_state: [],
 			pan_x: 0.0,
@@ -96,7 +91,6 @@ impl Avk {
 			self.gman.window.get_width(),
 			self.gman.window.get_height()
 		);
-
 		let should_not_quit = self.gman.update();
 		should_not_quit
 	}

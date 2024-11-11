@@ -62,6 +62,7 @@ pub extern "C" fn avk_main() {
 	};
 
 	let fg = avk.get_foreground();
+	println!("fg: {:x}", (fg as *mut Sprite) as usize);
 	fg[0] = Sprite {
 		image_id: 1,
 		palette_transform: 0b0001 | Sprite::FLIP_Y_MASK,

@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     # The AVK ROM runner
-    "avk-runner",
+    "avk-run",
     # Flat api
     "avk",
     # CLI tool to intake PNG images into AVK resources.

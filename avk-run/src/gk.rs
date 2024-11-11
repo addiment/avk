@@ -34,7 +34,7 @@ const VIEW_VERT_SOURCE: &str = concat!(include_str!("shaders/view_vert.glsl"), "
 const VIEW_FRAG_SOURCE: &str = concat!(include_str!("shaders/view_frag.glsl"), "\0");
 
 #[inline(always)]
-fn err_check() {
+pub fn err_check() {
 	unsafe {
 		let err = gl::GetError();
 		if err != gl::NO_ERROR {
@@ -150,7 +150,7 @@ impl GirlsKissing {
 
 			// gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
 
-			for sprite in (*avk).raw.foreground {
+			for sprite in (*(*avk).raw).foreground {
 				// let image_id = sprite.image_id;
 				let palette_id = sprite.get_palette_id();
 
