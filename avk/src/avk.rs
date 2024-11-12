@@ -1,6 +1,6 @@
 use core::ffi::c_void;
 use core::mem;
-use core::ptr::null;
+use core::ptr::{addr_of_mut, null};
 use crate::{BACKGROUND_CANVAS_SIZE, MAX_IMAGES, MAX_PALETTES, MAX_SPRITES};
 use crate::prelude::*;
 
@@ -16,8 +16,8 @@ pub struct Avk {
 	raw: *mut AvkRaw,
 }
 
-// #[no_mangle]
-// extern "C" static mut AVK_INIT_FP
+// These values are function pointers written by the AVK runner/loader.
+// The AVK api is a wrapper around these function pointers.
 
 #[no_mangle]
 pub static mut AVK_INIT: *const c_void = null();
@@ -30,9 +30,15 @@ pub static mut AVK_GET_TIME: *const c_void = null();
 #[no_mangle]
 pub static mut AVK_GET_INPUT: *const c_void = null();
 
+static mut HAS_INIT: bool = false;
+
 impl Avk {
 	pub fn init(images: [Image; MAX_IMAGES], palettes: [Palette; MAX_PALETTES]) -> Self {
 		unsafe {
+			if HAS_INIT {
+				panic!("AVK has already been initialized!");
+			}
+			*(addr_of_mut!(HAS_INIT)) = true;
 			let avk_init = mem::transmute::<*const c_void, fn(images: *const [u8; Image::PIXEL_COUNT], palettes: *const [u16; 16]) -> *mut AvkRaw>(AVK_INIT);
 			let raw = avk_init(
 				images.map(|e| e.0).as_mut_ptr(),

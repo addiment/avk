@@ -24,8 +24,6 @@ pub use avk_types::{
 use avk_types::prelude::*;
 use avk_types::AvkRaw;
 use crate::gk::GirlsKissing;
-
-pub mod prelude;
 mod sdl;
 mod gk;
 

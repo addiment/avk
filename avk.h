@@ -1,5 +1,9 @@
+#ifndef AVK_H
+#define AVK_H
 #include <stdint.h>
 #include <stdbool.h>
+
+#define AVK_EXPORT __attribute__(( visibility("default") ))
 
 /// Square pixel size of sprites and tiles.
 static const uint16_t IMAGE_SIZE = 16;
@@ -78,13 +82,39 @@ typedef struct AvkRaw {
     Sprite foreground[96];
 } AvkRaw;
 
-typedef uint8_t Player;
-typedef uint8_t GamepadInput;
 typedef uint8_t Image[256];
 typedef uint16_t Palette[4];
 
-AvkRaw *avk_init(const Image images[4], const Palette palettes[4]);
-void avk_drop(AvkRaw *avk);
-bool avk_update(AvkRaw *avk);
-uint64_t avk_get_time(AvkRaw *avk);
-bool avk_get_input(const AvkRaw *avk, Player player, GamepadInput input);
+// Function pointers. Must be exported so
+AVK_EXPORT void *AVK_INIT = 0;
+AVK_EXPORT void *AVK_DROP = 0;
+AVK_EXPORT void *AVK_UPDATE = 0;
+AVK_EXPORT void *AVK_GET_TIME = 0;
+AVK_EXPORT void *AVK_GET_INPUT = 0;
+
+inline static AvkRaw *avk_init(const Image images[4], const Palette palettes[4]) {
+    AvkRaw *(*fp)(const Image[4], const Palette[4]) = (AvkRaw *(*)(const Image *, const Palette *))AVK_INIT;
+    return fp(images, palettes);
+}
+
+inline static void avk_drop(AvkRaw *avk) {
+    void (*fp)(AvkRaw *avk) = (void (*)(AvkRaw *avk))AVK_DROP;
+    return fp(avk);
+}
+
+inline static bool avk_update(AvkRaw *avk) {
+    bool (*fp)(AvkRaw *avk) = (bool (*)(AvkRaw *avk))AVK_UPDATE;
+    return fp(avk);
+}
+
+inline static uint64_t avk_get_time(const AvkRaw *avk) {
+    uint64_t (*fp)(const AvkRaw *avk) = (uint64_t (*)(const AvkRaw *avk))AVK_GET_TIME;
+    return fp(avk);
+}
+
+inline static bool avk_get_input(const AvkRaw *avk, enum Player player, enum GamepadInput input) {
+    bool (*fp)(const AvkRaw*, enum Player, enum GamepadInput) = (bool (*)(const AvkRaw*, enum Player, enum GamepadInput))AVK_GET_INPUT;
+    return fp(avk, player, input);
+}
+
+#endif // AVK_H

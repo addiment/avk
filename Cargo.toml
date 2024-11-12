@@ -6,7 +6,9 @@ members = [
     # Flat api
     "avk",
     # CLI tool to intake PNG images into AVK resources.
-    "avk-convert", "sample-project",
+    "avk-convert",
+    # Sample project in Rust.
+    "pong",
 ]
 
 [profile.release.package.'*']

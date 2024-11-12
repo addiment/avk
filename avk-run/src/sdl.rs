@@ -219,8 +219,8 @@ impl <'a> Gman<> {
 		app_identifier: impl Into<String>
 	) -> Self {
 		unsafe {
-			let width: i32 = avk_types::RESOLUTION_WIDTH as i32 * 2;
-			let height: i32 = avk_types::RESOLUTION_HEIGHT as i32 * 2;
+			let width: i32 = avk_types::RESOLUTION_WIDTH as i32 * 4;
+			let height: i32 = avk_types::RESOLUTION_HEIGHT as i32 * 4;
 
 			// called before init
 			SDL_SetMainReady();

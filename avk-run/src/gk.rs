@@ -6,10 +6,11 @@ use std::ffi::{c_void, CStr};
 use std::ptr::{null};
 use gl::types::{GLchar, GLenum, GLfloat, GLint, GLsizei,GLuint, GLushort};
 use avk_types::{u16_to_rgba, MAX_IMAGES, MAX_PALETTES, RESOLUTION_HEIGHT, RESOLUTION_WIDTH};
+use avk_types::prelude::{Image, Palette};
+use crate::Avk;
 use crate::gk::material::Material;
 use crate::gk::mesh::Mesh;
 use crate::gk::texture::Texture;
-use crate::prelude::*;
 
 const UNIT_MESH: [GLfloat; 8] = [
 	0.0, 0.0,
