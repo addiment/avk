@@ -1,5 +1,7 @@
+use std::env::args;
 use std::ffi::c_void;
 use std::mem;
+use std::path::Path;
 use dlopen2::raw::Library;
 use crate::c_binds::{
     avk_init,
@@ -17,7 +19,10 @@ mod avk_backend;
 
 fn main() {
     logchamp::init().unwrap();
-    let lib = Library::open("./libpong.so").unwrap();
+    let args = args().collect::<Vec<String>>();
+    let so_path_arg = &args[1];
+    let so_path = Path::new(so_path_arg).canonicalize().unwrap();
+    let lib = Library::open(so_path).unwrap();
     unsafe {
         // load the external function pointers
         let ext_avk_init = lib.symbol::<*const c_void>("AVK_INIT").unwrap();
