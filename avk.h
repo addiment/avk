@@ -6,28 +6,28 @@
 #define AVK_EXPORT __attribute__(( visibility("default") ))
 
 /// Square pixel size of sprites and tiles.
-static const uint16_t IMAGE_SIZE = 16;
+static const int16_t IMAGE_SIZE = 16;
 
 /// Tiles per row of the canvas.
-static const uint16_t CANVAS_WIDTH = 16;
+static const int16_t CANVAS_WIDTH = 16;
 
 /// Tiles per column of the canvas.
-static const uint16_t CANVAS_HEIGHT = 12;
+static const int16_t CANVAS_HEIGHT = 12;
 
 /// The total tile count of the canvas.
 static const uintptr_t CANVAS_SIZE = ((uintptr_t)CANVAS_WIDTH * (uintptr_t)CANVAS_HEIGHT);
 
-static const uint16_t BACKGROUND_CANVAS_WIDTH = (CANVAS_WIDTH + 2);
+static const int16_t BACKGROUND_CANVAS_WIDTH = (CANVAS_WIDTH + 2);
 
-static const uint16_t BACKGROUND_CANVAS_HEIGHT = (CANVAS_HEIGHT + 2);
+static const int16_t BACKGROUND_CANVAS_HEIGHT = (CANVAS_HEIGHT + 2);
 
 static const uintptr_t BACKGROUND_CANVAS_SIZE = ((uintptr_t)BACKGROUND_CANVAS_WIDTH * (uintptr_t)BACKGROUND_CANVAS_HEIGHT);
 
 /// Pixels per row of the canvas.
-static const uint16_t RESOLUTION_WIDTH = (IMAGE_SIZE * CANVAS_WIDTH);
+static const int16_t RESOLUTION_WIDTH = (IMAGE_SIZE * CANVAS_WIDTH);
 
 /// Pixels per column of the canvas
-static const uint16_t RESOLUTION_HEIGHT = (IMAGE_SIZE * CANVAS_HEIGHT);
+static const int16_t RESOLUTION_HEIGHT = (IMAGE_SIZE * CANVAS_HEIGHT);
 
 /// The total pixel count of the canvas.
 static const uintptr_t RESOLUTION_SIZE = ((uintptr_t)RESOLUTION_WIDTH * (uintptr_t)RESOLUTION_HEIGHT);
@@ -72,14 +72,16 @@ typedef struct Tile {
 typedef struct Sprite {
 	uint8_t image_id;
 	uint8_t palette_transform;
-	uint16_t x;
-	uint16_t y;
+	int16_t x;
+	int16_t y;
 } Sprite;
 
 typedef struct AvkRaw {
     void *internal;
     Tile background[252];
     Sprite foreground[96];
+    int8_t pan_x,
+    int8_t pan_y,
 } AvkRaw;
 
 typedef uint8_t Image[256];

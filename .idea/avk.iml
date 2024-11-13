@@ -7,7 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/avk-run/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/avk-run/tests" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/pong/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/avk-pong/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/avk-convert/target" />
       <excludeFolder url="file://$MODULE_DIR$/avk/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

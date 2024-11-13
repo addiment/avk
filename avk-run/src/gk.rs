@@ -1,3 +1,5 @@
+//! This module uses a lot of hardcoded silliness in order to work with AVK.
+
 mod material;
 mod mesh;
 mod texture;
@@ -7,7 +9,7 @@ use std::ptr::{null};
 use gl::types::{GLchar, GLenum, GLfloat, GLint, GLsizei,GLuint, GLushort};
 use avk_types::{u16_to_rgba, MAX_IMAGES, MAX_PALETTES, RESOLUTION_HEIGHT, RESOLUTION_WIDTH};
 use avk_types::prelude::{Image, Palette};
-use crate::Avk;
+use crate::avk_backend::AvkBackend;
 use crate::gk::material::Material;
 use crate::gk::mesh::Mesh;
 use crate::gk::texture::Texture;
@@ -138,12 +140,13 @@ impl GirlsKissing {
 		}
 	}
 
-	pub fn update(&mut self, avk: *mut Avk, window_width: u32, window_height: u32,) {
+	/// Updates the OpenGL rendering backend.
+	pub fn update(&mut self, avk: *mut AvkBackend, window_width: u32, window_height: u32,) {
 		unsafe {
 			gl::BindFramebuffer(gl::FRAMEBUFFER, self.fbo);
 
 			gl::Viewport(0, 0, RESOLUTION_WIDTH as GLsizei, RESOLUTION_HEIGHT as GLsizei);
-			gl::ClearColor(0.933333333, 0.4, 0.133333333, 1.0);
+			gl::ClearColor(0.0, 0.0, 0.0, 1.0);
 			gl::Clear(gl::COLOR_BUFFER_BIT);
 
 			gl::Enable(gl::BLEND);

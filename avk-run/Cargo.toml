@@ -9,8 +9,6 @@ bindgen = "0.70.1"
 [dependencies]
 gl = "0.14.0"
 avk-types = { path = "../avk" }
-#raw-window-handle = "0.6.2"
-#pollster = "0.4.0"
 dlopen2 = "0.7.0"
 log = "0.4.22"
 

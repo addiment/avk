@@ -6,11 +6,14 @@ pub mod window;
 
 mod sys;
 
+use std::array::from_fn;
+use std::collections::HashMap;
 use std::ffi::*;
 use std::mem;
 use std::ptr::*;
-use log::debug;
-use avk_types::prelude::*;
+use log::{debug, warn};
+use avk_types::{GamepadInput, Player};
+use crate::avk_backend::AvkBackend;
 use crate::sdl::sys::*;
 use crate::sdl::window::{Window};
 
@@ -23,6 +26,8 @@ pub(super) enum Keycode {
 	Backspace,
 	Tab,
 	Space,
+	Comma,
+	Period,
 	Num0,
 	Num1,
 	Num2,
@@ -89,6 +94,8 @@ pub(super) fn sdl_keycode_to_keycode(value: SDL_Keycode) -> Keycode {
 		SDLK_BACKSPACE => Keycode::Backspace,
 		SDLK_TAB => Keycode::Tab,
 		SDLK_SPACE => Keycode::Space,
+		SDLK_COMMA => Keycode::Comma,
+		SDLK_PERIOD => Keycode::Period,
 		SDLK_0 => Keycode::Num0,
 		SDLK_1 => Keycode::Num1,
 		SDLK_2 => Keycode::Num2,
@@ -135,11 +142,6 @@ pub(super) fn sdl_keycode_to_keycode(value: SDL_Keycode) -> Keycode {
 unsafe fn panic_sdl_error(format_string: &str) {
 	let err = SDL_GetError();
 	panic!("{} {}", format_string, if err == null() { String::from("No further information.") } else { CString::from_raw(err as *mut c_char).into_string().unwrap() });
-}
-
-pub struct Gman {
-	pub window: Window,
-	gamepads: Vec<(SDL_JoystickID, *mut SDL_Gamepad)>,
 }
 
 enum SdlProperty<'a> {
@@ -190,26 +192,34 @@ unsafe fn set_sdl_prop(props: SDL_PropertiesID, key: &[u8], value: SdlProperty) 
 	}
 }
 
-unsafe fn process_gamepad_button(event: &SDL_Event, down: bool) -> Option<(GamepadInput, bool)> {
+unsafe fn process_gamepad_button(event: &SDL_Event) -> Option<GamepadInput> {
 	match event.gbutton.button as c_int {
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_NORTH => Some((GamepadInput::FaceUp, down)),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_EAST  => Some((GamepadInput::FaceRight, down)),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_SOUTH => Some((GamepadInput::FaceDown, down)),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_WEST  => Some((GamepadInput::FaceLeft, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_NORTH => Some(GamepadInput::FaceUp),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_EAST  => Some(GamepadInput::FaceRight),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_SOUTH => Some(GamepadInput::FaceDown),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_WEST  => Some(GamepadInput::FaceLeft),
 
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_UP => Some((GamepadInput::DirUp, down)),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_RIGHT => Some((GamepadInput::DirRight, down)),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_DOWN => Some((GamepadInput::DirDown, down)),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_LEFT => Some((GamepadInput::DirLeft, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_UP => Some(GamepadInput::DirUp),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_RIGHT => Some(GamepadInput::DirRight),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_DOWN => Some(GamepadInput::DirDown),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_LEFT => Some(GamepadInput::DirLeft),
 
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_LEFT_SHOULDER => Some((GamepadInput::TriggerLeft, down)),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER => Some((GamepadInput::TriggerRight, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_LEFT_SHOULDER => Some(GamepadInput::TriggerLeft),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER => Some(GamepadInput::TriggerRight),
 
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_BACK => Some((GamepadInput::Menu, down)),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_START => Some((GamepadInput::Menu, down)),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_BACK => Some(GamepadInput::Menu),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_START => Some(GamepadInput::Menu),
 
 		_ => None,
 	}
+}
+
+pub struct Gman {
+	pub window: Window,
+	gamepads: Vec<(SDL_JoystickID, *mut SDL_Gamepad)>,
+	// TODO: fix joystick support by tracking previous state... grumble grumble
+	pub action_state_gp: [HashMap<GamepadInput, bool>; 4],
+	pub action_state_kb: [HashMap<GamepadInput, bool>; 4],
 }
 
 impl <'a> Gman<> {
@@ -251,11 +261,14 @@ impl <'a> Gman<> {
 
 			Self {
 				window,
-				gamepads: Vec::new()
+				gamepads: Vec::new(),
+				action_state_gp: from_fn(|_| HashMap::with_capacity(4)),
+				action_state_kb: from_fn(|_| HashMap::with_capacity(4)),
 			}
 		}
 	}
 
+	/// Loads an OpenGL function by name
 	pub fn girls_loader(proc: &'static str) -> *const c_void {
 		// null-terminate it
 		let proc = String::from(proc) + "\0";
@@ -266,6 +279,40 @@ impl <'a> Gman<> {
 		};
 		// println!("{proc} @ {:#x}", res as usize);
 		res
+	}
+
+	fn keyboard_update(&mut self, event: SDL_KeyboardEvent) {
+		let player: Player;
+		let button: GamepadInput;
+		match sdl_keycode_to_keycode(event.key) {
+			Keycode::W => { player = Player::Alpha; button = GamepadInput::DirUp }
+			Keycode::A => { player = Player::Alpha; button = GamepadInput::DirLeft }
+			Keycode::S => { player = Player::Alpha; button = GamepadInput::DirDown }
+			Keycode::D => { player = Player::Alpha; button = GamepadInput::DirRight }
+			Keycode::Q => { player = Player::Alpha; button = GamepadInput::TriggerLeft }
+			Keycode::E => { player = Player::Alpha; button = GamepadInput::TriggerRight }
+			Keycode::Z => { player = Player::Alpha; button = GamepadInput::FaceLeft }
+			Keycode::C => { player = Player::Alpha; button = GamepadInput::FaceRight }
+			Keycode::X => { player = Player::Alpha; button = GamepadInput::FaceUp }
+			Keycode::V => { player = Player::Alpha; button = GamepadInput::FaceDown }
+
+			Keycode::I => { player = Player::Bravo; button = GamepadInput::DirUp }
+			Keycode::J => { player = Player::Bravo; button = GamepadInput::DirLeft }
+			Keycode::K => { player = Player::Bravo; button = GamepadInput::DirDown }
+			Keycode::L => { player = Player::Bravo; button = GamepadInput::DirRight }
+			Keycode::U => { player = Player::Bravo; button = GamepadInput::TriggerLeft }
+			Keycode::O => { player = Player::Bravo; button = GamepadInput::TriggerRight }
+			Keycode::N => { player = Player::Bravo; button = GamepadInput::FaceLeft }
+			Keycode::M => { player = Player::Bravo; button = GamepadInput::FaceRight }
+			Keycode::Comma => { player = Player::Bravo; button = GamepadInput::FaceUp }
+			Keycode::Period => { player = Player::Bravo; button = GamepadInput::FaceDown }
+			_ => return
+		}
+
+		if !event.repeat {
+			// println!("player {player:?} button {button:?} state {}", event.down);
+			self.action_state_kb[player.index()].insert(button, event.down);
+		}
 	}
 
 	pub fn update(&mut self) -> bool {
@@ -292,6 +339,9 @@ impl <'a> Gman<> {
 						SDL_EventType_SDL_EVENT_QUIT => {
 							return false;
 						}
+
+						SDL_EventType_SDL_EVENT_KEY_DOWN |
+						SDL_EventType_SDL_EVENT_KEY_UP => self.keyboard_update(event.key),
 
 						SDL_EventType_SDL_EVENT_GAMEPAD_REMOVED => {
 							let gamepad = self.gamepads.iter().position(|(j_id, _gamepad)| *j_id == event.gdevice.which);
@@ -344,23 +394,75 @@ impl <'a> Gman<> {
 							}
 						},
 
-						// SDL_EventType_SDL_EVENT_GAMEPAD_AXIS_MOTION => {
-						// 	if let Some(axis) = match event.gaxis.axis as c_int {
-						// 		SDL_GamepadAxis_SDL_GAMEPAD_AXIS_LEFTX => Some(GamepadInput::StickLeftX),
-						// 		SDL_GamepadAxis_SDL_GAMEPAD_AXIS_LEFTY => Some(GamepadInput::StickLeftY),
-						// 		_ => None,
-						// 	} {
-						// 		Some(BackendEvent::Gamepad(GamepadInputData::Analog {
-						// 			input: axis,
-						// 			x: ((event.gaxis.value as f32) + 0.5) / 32767.5,
-						// 		}))
-						// 	} else {
-						// 		None
-						// 	}
-						// },
 
-						SDL_EventType_SDL_EVENT_GAMEPAD_BUTTON_DOWN =>  { let _ = process_gamepad_button(&event, true); }
-						SDL_EventType_SDL_EVENT_GAMEPAD_BUTTON_UP =>  { let _ = process_gamepad_button(&event, false); }
+						SDL_EventType_SDL_EVENT_GAMEPAD_AXIS_MOTION => {
+							let g_axis = event.gaxis;
+							let pos = self.gamepads.iter().position(|e| {
+								g_axis.which == e.0
+							}).expect("Received a gamepad event from an invalid gamepad!");
+							if pos > 3 {
+								warn!("Input from extra gamepad discarded!");
+							} else {
+								let hm = self.action_state_gp.get_mut(pos)
+									.expect("Failed to get hashmap!");
+								match g_axis.axis as c_int {
+									SDL_GamepadAxis_SDL_GAMEPAD_AXIS_LEFTX => {
+										if g_axis.value > i16::MAX / 4 {
+											hm.insert(GamepadInput::DirRight, true);
+											hm.insert(GamepadInput::DirLeft, false);
+										} else if g_axis.value < i16::MIN / 4 {
+											hm.insert(GamepadInput::DirRight, false);
+											hm.insert(GamepadInput::DirLeft, true);
+										} else {
+											hm.insert(GamepadInput::DirRight, false);
+											hm.insert(GamepadInput::DirLeft, false);
+										}
+									}
+									SDL_GamepadAxis_SDL_GAMEPAD_AXIS_LEFTY => {
+										if g_axis.value > i16::MAX / 4 {
+											hm.insert(GamepadInput::DirUp, false);
+											hm.insert(GamepadInput::DirDown, true);
+										} else if g_axis.value < i16::MIN / 4 {
+											hm.insert(GamepadInput::DirUp, true);
+											hm.insert(GamepadInput::DirDown, false);
+										} else {
+											hm.insert(GamepadInput::DirUp, false);
+											hm.insert(GamepadInput::DirDown, false);
+										}
+									}
+									_ => (),
+								};
+							}
+						},
+
+						SDL_EventType_SDL_EVENT_GAMEPAD_BUTTON_DOWN =>  {
+							let g_button = event.gbutton;
+							let pos = self.gamepads.iter().position(|e| {
+								g_button.which == e.0
+							}).expect("Received a gamepad event from an invalid gamepad!");
+
+							if pos > 3 {
+								warn!("Input from extra gamepad discarded!");
+							} else if let Some(input) = process_gamepad_button(&event) {
+								let hm = self.action_state_gp.get_mut(pos)
+									.expect("Failed to get hashmap!");
+								hm.insert(input, true);
+							}
+						}
+						SDL_EventType_SDL_EVENT_GAMEPAD_BUTTON_UP =>  {
+							let g_button = event.gbutton;
+							let pos = self.gamepads.iter().position(|e| {
+								g_button.which == e.0
+							}).expect("Received a gamepad event from an invalid gamepad!");
+
+							if pos > 3 {
+								warn!("Input from extra gamepad discarded!");
+							} else if let Some(input) = process_gamepad_button(&event) {
+								let hm = self.action_state_gp.get_mut(pos)
+									.expect("Failed to get hashmap!");
+								hm.insert(input, false);
+							}
+						}
 
 						// SDL_EventType_SDL_EVENT_WINDOW_RESIZED => Some(BackendEvent::WindowResized {
 						// 	w: event.window.data1,

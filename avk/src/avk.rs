@@ -9,6 +9,8 @@ pub struct AvkRaw {
 	pub internal: *mut c_void,
 	pub background: [Tile; BACKGROUND_CANVAS_SIZE],
 	pub foreground: [Sprite; MAX_SPRITES],
+	pub pan_x: i8,
+	pub pan_y: i8,
 }
 
 /// Rust wrapper around the C ABI to use the raw Rust library.
@@ -18,6 +20,9 @@ pub struct Avk {
 
 // These values are function pointers written by the AVK runner/loader.
 // The AVK api is a wrapper around these function pointers.
+
+// TODO: remove AVK_INIT and AVK_DROP by passing a handle to the AVK instance in the avk_main fn.
+//		 this will require reworking how we declare main, since references != pointers
 
 #[no_mangle]
 pub static mut AVK_INIT: *const c_void = null();

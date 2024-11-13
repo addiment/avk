@@ -8,7 +8,7 @@ members = [
     # CLI tool to intake PNG images into AVK resources.
     "avk-convert",
     # Sample project in Rust.
-    "pong",
+    "avk-pong",
 ]
 
 [profile.release.package.'*']

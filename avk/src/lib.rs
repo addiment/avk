@@ -9,25 +9,27 @@ mod avk;
 pub use avk::AvkRaw;
 
 /// Square pixel size of sprites and tiles.
-pub const IMAGE_SIZE: u16 = 16; // px
+pub const IMAGE_SIZE: i16 = 16; // px
 
 /// Tiles per row of the canvas.
-pub const CANVAS_WIDTH: u16 = 16; // tiles/screen
+pub const CANVAS_WIDTH: i16 = 16; // tiles/screen
 /// Tiles per column of the canvas.
-pub const CANVAS_HEIGHT: u16 = 12; // tiles/screen
+pub const CANVAS_HEIGHT: i16 = 12; // tiles/screen
 /// The total tile count of the canvas.
 pub const CANVAS_SIZE: usize = CANVAS_WIDTH as usize * CANVAS_HEIGHT as usize; // 192
 
+// TODO: figure out how to name CANVAS, BACKGROUND_CANVAS, and RESOLUTION in a way that makes sense
+
 // the canvas including scroll padding
-pub const BACKGROUND_CANVAS_WIDTH: u16 = CANVAS_WIDTH + 2;
-pub const BACKGROUND_CANVAS_HEIGHT: u16 = CANVAS_HEIGHT + 2;
+pub const BACKGROUND_CANVAS_WIDTH: i16 = CANVAS_WIDTH + 2;
+pub const BACKGROUND_CANVAS_HEIGHT: i16 = CANVAS_HEIGHT + 2;
 pub const BACKGROUND_CANVAS_SIZE: usize =
     BACKGROUND_CANVAS_WIDTH as usize * BACKGROUND_CANVAS_HEIGHT as usize;
 
 /// Pixels per row of the canvas.
-pub const RESOLUTION_WIDTH: u16 = IMAGE_SIZE * CANVAS_WIDTH;
+pub const RESOLUTION_WIDTH: i16 = IMAGE_SIZE * CANVAS_WIDTH;
 /// Pixels per column of the canvas
-pub const RESOLUTION_HEIGHT: u16 = IMAGE_SIZE * CANVAS_HEIGHT;
+pub const RESOLUTION_HEIGHT: i16 = IMAGE_SIZE * CANVAS_HEIGHT;
 /// The total pixel count of the canvas.
 pub const RESOLUTION_SIZE: usize = RESOLUTION_WIDTH as usize * RESOLUTION_HEIGHT as usize;
 
@@ -35,7 +37,7 @@ pub const MAX_IMAGES: usize = 256;
 pub const MAX_PALETTES: usize = 16;
 pub const MAX_SPRITES: usize = 96;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 #[repr(C)]
 pub enum Player {
     Alpha,
@@ -63,7 +65,7 @@ pub struct Tile {
     pub palette_id: u8,
 }
 
-#[derive(Copy, Clone, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Eq, Hash, PartialEq, Debug)]
 #[repr(C)]
 pub enum GamepadInput {
     DirUp,

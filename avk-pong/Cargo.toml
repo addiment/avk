@@ -1,5 +1,5 @@
 [package]
-name = "sample-project"
+name = "avk-pong"
 version = "0.1.0"
 edition = "2021"
 

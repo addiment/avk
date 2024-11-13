@@ -12,8 +12,8 @@ pub struct Sprite {
 	//       this is a fantasy console! we can pay for a cache miss.
 	/// padding (2 bits) | flip-X (1 bit) | flip-Y (1 bit) | Palette ID (4 bits)
 	pub palette_transform: u8,
-	pub x: u16,
-	pub y: u16,
+	pub x: i16,
+	pub y: i16,
 }
 
 impl Sprite {
