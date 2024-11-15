@@ -1,21 +1,18 @@
+use avk_types::prelude::*;
+use avk_types::{AvkRaw, MAX_IMAGES, MAX_PALETTES};
 use std::array;
 use std::collections::HashMap;
 use std::ptr::null_mut;
-use avk_types::prelude::*;
-use avk_types::{
-	AvkRaw,
-	MAX_IMAGES,
-	MAX_PALETTES
-};
 
-use crate::render::{gl_err_check, AvkRenderManager};
+use crate::render::AvkRenderManager;
 use crate::sdl::SdlManager;
 
 pub struct AvkBackend {
 	pub raw: *mut AvkRaw,
 	pub palettes: [Palette; MAX_PALETTES],
+	// TODO: add the boot screen!
 	pub boot_images: [Image; 4],
-	pub images:	[Image; MAX_IMAGES],
+	pub images: [Image; MAX_IMAGES],
 
 	pub input_state: [HashMap<AvkGamepadInput, bool>; 4],
 
@@ -27,12 +24,9 @@ impl AvkBackend {
 	pub fn init(images: &[Image; MAX_IMAGES], palettes: &[Palette; MAX_PALETTES]) -> Self {
 		let mut images = images.clone();
 		let mut palettes = palettes.clone();
-		let gman = SdlManager::new(
-			"AK Virtual Console",
-			"1.0.0",
-			"computer.living.ak",
-		);
-		let girls_kissing = AvkRenderManager::init(&mut images, &mut palettes, SdlManager::gl_loader);
+		let gman = SdlManager::new("AK Virtual Console", "1.0.0", "computer.living.ak");
+		let girls_kissing =
+			AvkRenderManager::init(&mut images, &mut palettes, SdlManager::gl_loader);
 
 		Self {
 			palettes,
@@ -91,8 +85,7 @@ impl AvkBackend {
 				AvkGamepadInput::TriggerRight,
 				AvkGamepadInput::Menu,
 			] {
-				let state = *kb.get(&input).unwrap_or(&false)
-					|| *gp.get(&input).unwrap_or(&false);
+				let state = *kb.get(&input).unwrap_or(&false) || *gp.get(&input).unwrap_or(&false);
 				self.input_state[idx].insert(input, state);
 			}
 		}
@@ -104,7 +97,7 @@ impl AvkBackend {
 		self.render_manager.update(
 			this,
 			self.sdl_manager.window.get_width(),
-			self.sdl_manager.window.get_height()
+			self.sdl_manager.window.get_height(),
 		);
 		let should_not_quit = self.sdl_manager.update();
 

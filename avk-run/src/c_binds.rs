@@ -1,8 +1,8 @@
+use crate::backend::AvkBackend;
+use avk_types::prelude::{Image, Palette};
+use avk_types::{AvkGamepadInput, AvkRaw, Player, BACKGROUND_CANVAS_SIZE, MAX_SPRITES};
 use std::ffi::c_void;
 use std::mem;
-use avk_types::{AvkRaw, AvkGamepadInput, Player, BACKGROUND_CANVAS_SIZE, MAX_SPRITES};
-use avk_types::prelude::{Image, Palette};
-use crate::backend::AvkBackend;
 
 #[no_mangle]
 pub extern "C" fn avk_init(images: *const Image, palettes: *const Palette) -> *mut AvkRaw {
@@ -10,7 +10,7 @@ pub extern "C" fn avk_init(images: *const Image, palettes: *const Palette) -> *m
 	unsafe {
 		let mut avk: Box<AvkBackend> = Box::new(AvkBackend::init(
 			mem::transmute(images),
-			mem::transmute(palettes)
+			mem::transmute(palettes),
 		));
 		let mut raw = Box::new(AvkRaw {
 			internal: (avk.as_ref() as *const AvkBackend) as *mut c_void,
@@ -46,7 +46,11 @@ pub extern "C" fn avk_get_time(avk: *const AvkRaw) -> u64 {
 	}
 }
 
-pub extern "C" fn avk_get_input(avk: *const AvkRaw, player: Player, input: AvkGamepadInput) -> bool {
+pub extern "C" fn avk_get_input(
+	avk: *const AvkRaw,
+	player: Player,
+	input: AvkGamepadInput,
+) -> bool {
 	unsafe {
 		let avk = &*((*avk).internal as *const AvkBackend);
 		avk.get_input(player, input)

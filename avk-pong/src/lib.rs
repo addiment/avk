@@ -1,11 +1,11 @@
-use std::f32::consts::PI;
-use libm::{cosf, roundf, sinf};
-use avk_types::{CANVAS_HEIGHT, CANVAS_WIDTH, IMAGE_SIZE, RESOLUTION_HEIGHT, RESOLUTION_WIDTH};
 use avk_types::prelude::*;
+use avk_types::{CANVAS_HEIGHT, CANVAS_WIDTH, IMAGE_SIZE, RESOLUTION_HEIGHT, RESOLUTION_WIDTH};
+use libm::{cosf, roundf, sinf};
+use std::f32::consts::PI;
 
 #[repr(u8)]
 enum ImageIndex {
-	Paddle0
+	Paddle0,
 }
 
 #[repr(u8)]
@@ -34,7 +34,7 @@ enum SpriteIndex {
 
 enum Paddle {
 	Left,
-	Right
+	Right,
 }
 
 struct GameState {
@@ -43,8 +43,7 @@ struct GameState {
 }
 
 impl GameState {
-	fn update(&mut self, avk: &mut Avk) {
-	}
+	fn update(&mut self, avk: &mut Avk) {}
 }
 
 fn draw_ball(avk: &mut Avk, cx: i16, cy: i16) {
@@ -65,7 +64,6 @@ fn draw_ball(avk: &mut Avk, cx: i16, cy: i16) {
 	let br = &mut fg[9];
 	br.x = cx;
 	br.y = cy - 16;
-
 }
 
 #[no_mangle]
@@ -74,9 +72,12 @@ pub extern "C" fn avk_main() {
 		let mut palette: [Palette; 16] = [Palette::empty(); 16];
 		palette[0] = Palette::empty();
 		// generated with avk-convert
-		palette[1] = Palette([0, 15, 65535, 64767, 27903, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-		palette[2] = Palette([0, 65535, 8751, 58927, 17487, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-
+		palette[1] = Palette([
+			0, 15, 65535, 64767, 27903, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+		]);
+		palette[2] = Palette([
+			0, 65535, 8751, 58927, 17487, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		]);
 
 		let mut images: [Image; 256] = [Image::empty(); 256];
 		images[0] = Image::empty();
@@ -96,7 +97,7 @@ pub extern "C" fn avk_main() {
 			image_id: 1,
 			palette_transform: 0b0001 | Sprite::FLIP_Y_MASK,
 			x,
-			y: 0
+			y: 0,
 		};
 		fg[1] = Sprite {
 			image_id: 2,
@@ -114,9 +115,9 @@ pub extern "C" fn avk_main() {
 		let x = RESOLUTION_WIDTH - 16 - 8;
 		fg[3] = Sprite {
 			image_id: 1,
-			palette_transform: 0b0001 | Sprite::FLIP_X_MASK |Sprite::FLIP_Y_MASK,
+			palette_transform: 0b0001 | Sprite::FLIP_X_MASK | Sprite::FLIP_Y_MASK,
 			x,
-			y: 0
+			y: 0,
 		};
 		fg[4] = Sprite {
 			image_id: 2,
@@ -127,7 +128,8 @@ pub extern "C" fn avk_main() {
 		fg[5] = Sprite {
 			image_id: 1,
 			palette_transform: 0b0001 | Sprite::FLIP_X_MASK,
-			x, y: 32,
+			x,
+			y: 32,
 		};
 
 		let cx = RESOLUTION_WIDTH / 2;
@@ -204,7 +206,6 @@ pub extern "C" fn avk_main() {
 		fg[3].y = ry;
 		fg[4].y = ry + 16;
 		fg[5].y = ry + 32;
-
 
 		let cx = (cosf(s_time * 2.0 * PI) * 32.0) as i16 + RESOLUTION_WIDTH / 2;
 		let cy = (sinf(s_time * 2.0 * PI) * 32.0) as i16 + RESOLUTION_HEIGHT / 2;

@@ -1,8 +1,8 @@
+use crate::prelude::*;
+use crate::{BACKGROUND_CANVAS_SIZE, MAX_IMAGES, MAX_PALETTES, MAX_SPRITES};
 use core::ffi::c_void;
 use core::mem;
 use core::ptr::{addr_of_mut, null};
-use crate::{BACKGROUND_CANVAS_SIZE, MAX_IMAGES, MAX_PALETTES, MAX_SPRITES};
-use crate::prelude::*;
 
 #[repr(C)]
 pub struct AvkRaw {
@@ -44,10 +44,16 @@ impl Avk {
 				panic!("AVK has already been initialized!");
 			}
 			*(addr_of_mut!(HAS_INIT)) = true;
-			let avk_init = mem::transmute::<*const c_void, fn(images: *const [u8; Image::PIXEL_COUNT], palettes: *const [u16; 16]) -> *mut AvkRaw>(AVK_INIT);
+			let avk_init = mem::transmute::<
+				*const c_void,
+				fn(
+					images: *const [u8; Image::PIXEL_COUNT],
+					palettes: *const [u16; 16],
+				) -> *mut AvkRaw,
+			>(AVK_INIT);
 			let raw = avk_init(
 				images.map(|e| e.0).as_mut_ptr(),
-				palettes.map(|e| e.0).as_mut_ptr()
+				palettes.map(|e| e.0).as_mut_ptr(),
 			);
 			Self { raw }
 		}
@@ -55,14 +61,19 @@ impl Avk {
 
 	pub fn update(&mut self) -> bool {
 		unsafe {
-			mem::transmute::<*const c_void, extern "C" fn(avk: *mut AvkRaw) -> bool>(AVK_UPDATE)(self.raw)
+			mem::transmute::<*const c_void, extern "C" fn(avk: *mut AvkRaw) -> bool>(AVK_UPDATE)(
+				self.raw,
+			)
 			// avk_update(self.raw)
 		}
 	}
 
 	pub fn get_input(&self, player: Player, input: AvkGamepadInput) -> bool {
 		unsafe {
-			mem::transmute::<*const c_void, extern "C" fn(avk: *const AvkRaw, player: Player, input: AvkGamepadInput) -> bool>(AVK_GET_INPUT)(self.raw, player, input)
+			mem::transmute::<
+				*const c_void,
+				extern "C" fn(avk: *const AvkRaw, player: Player, input: AvkGamepadInput) -> bool,
+			>(AVK_GET_INPUT)(self.raw, player, input)
 			// avk_get_input(self.raw, player, input)
 		}
 	}
@@ -70,21 +81,19 @@ impl Avk {
 	/// Returns the current time, in milliseconds.
 	pub fn get_time(&self) -> u64 {
 		unsafe {
-			mem::transmute::<*const c_void, extern "C" fn(avk: *const AvkRaw) -> u64>(AVK_GET_TIME)(self.raw)
+			mem::transmute::<*const c_void, extern "C" fn(avk: *const AvkRaw) -> u64>(AVK_GET_TIME)(
+				self.raw,
+			)
 			// avk_get_time(self.raw)
 		}
 	}
 
 	pub fn get_foreground(&mut self) -> &mut [Sprite; MAX_SPRITES] {
-		unsafe {
-			&mut (*self.raw).foreground
-		}
+		unsafe { &mut (*self.raw).foreground }
 	}
 
 	pub fn get_background(&mut self) -> &mut [Tile; BACKGROUND_CANVAS_SIZE] {
-		unsafe {
-			&mut (*self.raw).background
-		}
+		unsafe { &mut (*self.raw).background }
 	}
 }
 

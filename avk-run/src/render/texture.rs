@@ -1,9 +1,9 @@
+use crate::render::gl_err_check;
+use avk_types::prelude::Image;
+use avk_types::{IMAGE_SIZE, MAX_IMAGES};
+use gl::types::{GLint, GLsizei, GLuint};
 use std::array::from_fn;
 use std::ffi::c_void;
-use gl::types::{GLint, GLsizei, GLuint};
-use avk_types::{IMAGE_SIZE, MAX_IMAGES};
-use avk_types::prelude::Image;
-use crate::render::gl_err_check;
 
 #[derive(Copy, Clone)]
 pub(crate) struct Texture {
@@ -15,7 +15,11 @@ impl Texture {
 	pub fn new_bulk(data: &mut [Image; MAX_IMAGES]) -> [Self; MAX_IMAGES] {
 		let mut texture_ids: [GLuint; MAX_IMAGES] = [0; MAX_IMAGES];
 		unsafe {
-			gl::CreateTextures(gl::TEXTURE_2D, MAX_IMAGES as GLsizei, texture_ids.as_mut_ptr());
+			gl::CreateTextures(
+				gl::TEXTURE_2D,
+				MAX_IMAGES as GLsizei,
+				texture_ids.as_mut_ptr(),
+			);
 			gl_err_check();
 		}
 
@@ -34,14 +38,16 @@ impl Texture {
 					gl::RED,
 					// u8
 					gl::UNSIGNED_BYTE,
-					data[i].0.as_mut_ptr() as *mut c_void
+					data[i].0.as_mut_ptr() as *mut c_void,
 				);
 				gl_err_check();
 				// image won't show up without this. damn you, OpenGL!
 				gl::GenerateMipmap(gl::TEXTURE_2D);
 				gl_err_check();
 			}
-			Texture { texture_handle: texture_ids[i] }
+			Texture {
+				texture_handle: texture_ids[i],
+			}
 		});
 
 		textures

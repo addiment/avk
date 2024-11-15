@@ -1,6 +1,6 @@
-use std::ptr::{null, null_mut};
 use crate::render::gl_err_check;
 use gl::types::{GLchar, GLsizei, GLuint};
+use std::ptr::{null, null_mut};
 
 #[derive(Copy, Clone)]
 pub(crate) struct Material {
@@ -11,17 +11,11 @@ pub(crate) struct Material {
 
 impl Material {
 	pub fn new(frag_source: &str, vert_source: &str) -> Self {
-		let prog = unsafe {
-			gl::CreateProgram()
-		};
+		let prog = unsafe { gl::CreateProgram() };
 
-		let frag = unsafe {
-			gl::CreateShader(gl::FRAGMENT_SHADER)
-		};
+		let frag = unsafe { gl::CreateShader(gl::FRAGMENT_SHADER) };
 
-		let vert = unsafe {
-			gl::CreateShader(gl::VERTEX_SHADER)
-		};
+		let vert = unsafe { gl::CreateShader(gl::VERTEX_SHADER) };
 
 		fn ensure_shader_status(shader: GLuint) {
 			unsafe {
@@ -33,9 +27,12 @@ impl Material {
 						shader,
 						info_log.len() as GLsizei,
 						null_mut(),
-						info_log.as_mut_ptr() as *mut GLchar
+						info_log.as_mut_ptr() as *mut GLchar,
 					);
-					panic!("Failed to compile error: {success} \"{}\"", String::from_iter(info_log));
+					panic!(
+						"Failed to compile error: {success} \"{}\"",
+						String::from_iter(info_log)
+					);
 				}
 			}
 		}
@@ -50,9 +47,12 @@ impl Material {
 						prog,
 						info_log.len() as GLsizei,
 						null_mut(),
-						info_log.as_mut_ptr() as *mut GLchar
+						info_log.as_mut_ptr() as *mut GLchar,
 					);
-					panic!("OpenGL error: {success} \"{}\"", String::from_iter(info_log));
+					panic!(
+						"OpenGL error: {success} \"{}\"",
+						String::from_iter(info_log)
+					);
 				}
 			}
 		}
@@ -98,11 +98,7 @@ impl Material {
 		unsafe {
 			let string = name.into() + "\0";
 			let u_pos_loc = gl::GetUniformLocation(self.prog, string.as_ptr() as *const GLchar);
-			gl::Uniform2f(
-				u_pos_loc,
-				x,
-				y,
-			);
+			gl::Uniform2f(u_pos_loc, x, y);
 		}
 	}
 
@@ -110,13 +106,7 @@ impl Material {
 		unsafe {
 			let string = name.into() + "\0";
 			let u_pos_loc = gl::GetUniformLocation(self.prog, string.as_ptr() as *const GLchar);
-			gl::Uniform4f(
-				u_pos_loc,
-				x,
-				y,
-				z,
-				w
-			);
+			gl::Uniform4f(u_pos_loc, x, y, z, w);
 		}
 	}
 }

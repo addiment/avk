@@ -1,7 +1,7 @@
+use crate::render::gl_err_check;
+use gl::types::{GLfloat, GLsizei, GLsizeiptr, GLuint};
 use std::ffi::c_void;
 use std::ptr::null;
-use gl::types::{GLfloat, GLsizei, GLsizeiptr, GLuint};
-use crate::render::gl_err_check;
 
 /// A mesh made up of triangles.
 /// Currently, this abstraction doesn't have support for any attributes other than position.
@@ -50,7 +50,7 @@ impl Mesh {
 				// this is measured in BYTES, not ELEMENTS. damn you, OpenGL!
 				(vertex_data.len() * size_of::<GLfloat>()) as GLsizeiptr,
 				vertex_data.as_ptr() as *const c_void,
-				gl::STATIC_DRAW
+				gl::STATIC_DRAW,
 			);
 			gl_err_check();
 			gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
@@ -62,7 +62,7 @@ impl Mesh {
 				gl::FLOAT,
 				gl::FALSE,
 				(2 * size_of::<GLfloat>()) as GLsizei,
-				null()
+				null(),
 			);
 			gl_err_check();
 			gl::EnableVertexAttribArray(0);
@@ -74,7 +74,7 @@ impl Mesh {
 				// BYTES not ELEMENTS
 				(element_data.len() * size_of::<GLfloat>()) as GLsizeiptr,
 				element_data.as_ptr() as *const c_void,
-				gl::STATIC_DRAW
+				gl::STATIC_DRAW,
 			);
 			gl_err_check();
 		}
@@ -93,7 +93,12 @@ impl Mesh {
 			gl::BindVertexArray(self.vao);
 			gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
 			gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
-			gl::DrawElements(gl::TRIANGLES, (self.tri_count * 3) as GLsizei, gl::UNSIGNED_SHORT, null());
+			gl::DrawElements(
+				gl::TRIANGLES,
+				(self.tri_count * 3) as GLsizei,
+				gl::UNSIGNED_SHORT,
+				null(),
+			);
 		}
 	}
 }

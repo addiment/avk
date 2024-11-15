@@ -9,3 +9,7 @@ Task List:
 - Rewrite the ABI to avoid having resources loaded programmatically (remove AVK_INIT, AVK_DROP, and load resources straight from the ROM)
 - Improve controller support
 - Create unit and integration tests
+- Add background rendering
+  - XY pan,
+  - function-based distortion? to replicate interrupt timing on early consoles (like Earthbound backgrounds)
+- Sequenced audio

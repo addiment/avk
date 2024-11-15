@@ -1,9 +1,3 @@
 pub use crate::{
-	avk::Avk,
-	Player,
-	Tile,
-	sprite::Sprite,
-	image::Image,
-	palette::Palette,
-	AvkGamepadInput,
+	avk::Avk, image::Image, palette::Palette, sprite::Sprite, AvkGamepadInput, Player, Tile,
 };

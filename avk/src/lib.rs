@@ -1,10 +1,10 @@
 #![no_std]
 
-pub mod prelude;
-mod palette;
-mod image;
-mod sprite;
 mod avk;
+mod image;
+mod palette;
+pub mod prelude;
+mod sprite;
 
 pub use avk::AvkRaw;
 
@@ -24,7 +24,7 @@ pub const CANVAS_SIZE: usize = CANVAS_WIDTH as usize * CANVAS_HEIGHT as usize; /
 pub const BACKGROUND_CANVAS_WIDTH: i16 = CANVAS_WIDTH + 2;
 pub const BACKGROUND_CANVAS_HEIGHT: i16 = CANVAS_HEIGHT + 2;
 pub const BACKGROUND_CANVAS_SIZE: usize =
-    BACKGROUND_CANVAS_WIDTH as usize * BACKGROUND_CANVAS_HEIGHT as usize;
+	BACKGROUND_CANVAS_WIDTH as usize * BACKGROUND_CANVAS_HEIGHT as usize;
 
 /// Pixels per row of the canvas.
 pub const RESOLUTION_WIDTH: i16 = IMAGE_SIZE * CANVAS_WIDTH;
@@ -40,75 +40,75 @@ pub const MAX_SPRITES: usize = 96;
 #[derive(Copy, Clone, Debug)]
 #[repr(C)]
 pub enum Player {
-    Alpha,
-    Bravo,
-    Charlie,
-    Delta,
+	Alpha,
+	Bravo,
+	Charlie,
+	Delta,
 }
 
 impl Player {
-    pub fn index(&self) -> usize {
-        match self {
-            Player::Alpha => 0,
-            Player::Bravo => 1,
-            Player::Charlie => 2,
-            Player::Delta => 3,
-        }
-    }
+	pub fn index(&self) -> usize {
+		match self {
+			Player::Alpha => 0,
+			Player::Bravo => 1,
+			Player::Charlie => 2,
+			Player::Delta => 3,
+		}
+	}
 }
 
 #[derive(Default, Copy, Clone)]
 #[repr(C)]
 pub struct Tile {
-    pub image_id: u8,
-    /// lower bits are palette, upper bits are flip
-    pub palette_id: u8,
+	pub image_id: u8,
+	/// lower bits are palette, upper bits are flip
+	pub palette_id: u8,
 }
 
 #[derive(Copy, Clone, Eq, Hash, PartialEq, Debug)]
 #[repr(C)]
 pub enum AvkGamepadInput {
-    DirUp,
-    DirRight,
-    DirDown,
-    DirLeft,
+	DirUp,
+	DirRight,
+	DirDown,
+	DirLeft,
 
-    FaceUp,
-    FaceRight,
-    FaceDown,
-    FaceLeft,
+	FaceUp,
+	FaceRight,
+	FaceDown,
+	FaceLeft,
 
-    TriggerLeft,
-    TriggerRight,
+	TriggerLeft,
+	TriggerRight,
 
-    Menu,
+	Menu,
 }
 
 pub fn rgba_to_u16(mut rgba: [u8; 4]) -> u16 {
-    if rgba[3] > 7 {
-        rgba[3] = 15;
-        // red
-        (rgba[0] as u16) << 12 |
+	if rgba[3] > 7 {
+		rgba[3] = 15;
+		// red
+		(rgba[0] as u16) << 12 |
             // green
             (rgba[1] as u16) << 8 |
             // blue
             (rgba[2] as u16) << 4 |
             // alpha
             (rgba[3] as u16)
-    } else {
-        0
-    }
+	} else {
+		0
+	}
 }
 
 pub const fn u16_to_rgba(color: u16) -> [u8; 4] {
-    [
-        // red
-        ((color & 0b1111_0000_0000_0000) >> 12) as u8,
-        // green
-        ((color & 0b0000_1111_0000_0000) >> 8) as u8,
-        // blue
-        ((color & 0b0000_0000_1111_0000) >> 4) as u8,
-        // alpha
-        (color & 0b0000_0000_0000_1111) as u8,
-    ]
+	[
+		// red
+		((color & 0b1111_0000_0000_0000) >> 12) as u8,
+		// green
+		((color & 0b0000_1111_0000_0000) >> 8) as u8,
+		// blue
+		((color & 0b0000_0000_1111_0000) >> 4) as u8,
+		// alpha
+		(color & 0b0000_0000_0000_1111) as u8,
+	]
 }

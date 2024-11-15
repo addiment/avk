@@ -1,4 +1,4 @@
-use log::{Record, Level, Metadata};
+use log::{Level, Metadata, Record};
 
 struct LogChamp;
 
@@ -11,8 +11,8 @@ impl log::Log for LogChamp {
 		if self.enabled(record.metadata()) {
 			let color = match record.level() {
 				Level::Error => "\x1b[91m",
-				Level::Warn => 	"\x1b[33m",
-				Level::Info => 	"\x1b[0m",
+				Level::Warn => "\x1b[33m",
+				Level::Info => "\x1b[0m",
 				Level::Debug => "\x1b[36m",
 				Level::Trace => "\x1b[90m",
 			};
@@ -30,7 +30,7 @@ impl log::Log for LogChamp {
 	fn flush(&self) {}
 }
 
-use log::{SetLoggerError, LevelFilter};
+use log::{LevelFilter, SetLoggerError};
 
 static LOGGER: LogChamp = LogChamp;
 

@@ -4,13 +4,13 @@ mod material;
 mod mesh;
 mod texture;
 
-use std::ffi::{c_void, CStr};
-use std::ptr::{null};
-use gl::types::{GLchar, GLenum, GLfloat, GLint, GLsizei,GLuint, GLushort};
-use log::error;
-use avk_types::{u16_to_rgba, MAX_IMAGES, MAX_PALETTES, RESOLUTION_HEIGHT, RESOLUTION_WIDTH};
-use avk_types::prelude::{Image, Palette};
 use crate::backend::AvkBackend;
+use avk_types::prelude::{Image, Palette};
+use avk_types::{u16_to_rgba, MAX_IMAGES, MAX_PALETTES, RESOLUTION_HEIGHT, RESOLUTION_WIDTH};
+use gl::types::{GLchar, GLenum, GLfloat, GLint, GLsizei, GLuint, GLushort};
+use log::error;
+use std::ffi::{c_void, CStr};
+use std::ptr::null;
 
 use crate::render::material::Material;
 use crate::render::mesh::Mesh;
@@ -20,13 +20,13 @@ const UNIT_MESH: [GLfloat; 8] = [
 	0.0, 0.0,
 	1.0, 0.0,
 	1.0, 1.0,
-	0.0, 1.0,
+	0.0, 1.0
 ];
 const VIEWPORT_MESH: [GLfloat; 8] = [
 	-1.0, -1.0,
 	1.0, -1.0,
 	1.0, 1.0,
-	-1.0, 1.0,
+	-1.0, 1.0
 ];
 const SQUARE_MESH_ELEMENTS: [GLushort; 6] = [
 	0, 1, 2,
@@ -68,18 +68,25 @@ extern "system" fn opengl_error_hook(
 	_severity: GLenum,
 	_length: GLsizei,
 	message: *const GLchar,
-	_user_param: *mut c_void
+	_user_param: *mut c_void,
 ) {
 	unsafe {
 		let cstr = CStr::from_ptr(message).to_str().unwrap().to_owned();
-		error!("!!! OpenGL error !!!\nsource: {source}, gl_type: {gl_type}\n\"{}\"", cstr);
+		error!(
+			"!!! OpenGL error !!!\nsource: {source}, gl_type: {gl_type}\n\"{}\"",
+			cstr
+		);
 	}
 }
 
 impl AvkRenderManager {
 	/// Initializes the OpenGL state related to AVK.
 	// TODO: generate a texture using the palettes so we can use two samplers instead of 8 vec4s
-	pub fn init(images: &mut [Image; MAX_IMAGES], _palettes: &[Palette; MAX_PALETTES], loader: fn(&'static str) -> *const c_void) -> Self {
+	pub fn init(
+		images: &mut [Image; MAX_IMAGES],
+		_palettes: &[Palette; MAX_PALETTES],
+		loader: fn(&'static str) -> *const c_void,
+	) -> Self {
 		gl::load_with(loader);
 		gl_err_check();
 
@@ -91,7 +98,7 @@ impl AvkRenderManager {
 				gl::Enable(gl::DEBUG_OUTPUT_SYNCHRONOUS);
 				gl::DebugMessageCallback(Some(opengl_error_hook), null());
 			}
-				
+
 			let mut rbo = 0;
 			let mut fbo = 0;
 			let mut fbt = 0;
@@ -113,7 +120,7 @@ impl AvkRenderManager {
 					0,
 					gl::RGB,
 					gl::UNSIGNED_BYTE,
-					null()
+					null(),
 				);
 				gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as GLint);
 				gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint);
@@ -123,12 +130,21 @@ impl AvkRenderManager {
 					gl::COLOR_ATTACHMENT0,
 					gl::TEXTURE_2D,
 					fbt,
-					0
+					0,
 				);
 				gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
-				gl::RenderbufferStorage(gl::RENDERBUFFER, gl::DEPTH24_STENCIL8, RESOLUTION_WIDTH as GLsizei, RESOLUTION_HEIGHT as GLsizei); // use a single renderbuffer object for both a depth AND stencil buffer.
-				gl::FramebufferRenderbuffer(gl::FRAMEBUFFER, gl::DEPTH_STENCIL_ATTACHMENT, gl::RENDERBUFFER, rbo); // now actually attach it
-				// now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+				gl::RenderbufferStorage(
+					gl::RENDERBUFFER,
+					gl::DEPTH24_STENCIL8,
+					RESOLUTION_WIDTH as GLsizei,
+					RESOLUTION_HEIGHT as GLsizei,
+				);
+				gl::FramebufferRenderbuffer(
+					gl::FRAMEBUFFER,
+					gl::DEPTH_STENCIL_ATTACHMENT,
+					gl::RENDERBUFFER,
+					rbo,
+				);
 				if gl::CheckFramebufferStatus(gl::FRAMEBUFFER) != gl::FRAMEBUFFER_COMPLETE {
 					panic!("Framebuffer is not complete!");
 				}
@@ -143,7 +159,7 @@ impl AvkRenderManager {
 
 				unit_quad: Mesh::new(4, &UNIT_MESH, &SQUARE_MESH_ELEMENTS),
 				unit_prog: Material::new(QUAD_FRAG_SOURCE, QUAD_VERT_SOURCE),
-				
+
 				viewport_quad: Mesh::new(4, &VIEWPORT_MESH, &SQUARE_MESH_ELEMENTS),
 				viewport_prog: Material::new(VIEW_FRAG_SOURCE, VIEW_VERT_SOURCE),
 			}
@@ -151,11 +167,16 @@ impl AvkRenderManager {
 	}
 
 	/// Updates the OpenGL rendering backend.
-	pub fn update(&mut self, avk: *mut AvkBackend, window_width: u32, window_height: u32,) {
+	pub fn update(&mut self, avk: *mut AvkBackend, window_width: u32, window_height: u32) {
 		unsafe {
 			gl::BindFramebuffer(gl::FRAMEBUFFER, self.fbo);
 
-			gl::Viewport(0, 0, RESOLUTION_WIDTH as GLsizei, RESOLUTION_HEIGHT as GLsizei);
+			gl::Viewport(
+				0,
+				0,
+				RESOLUTION_WIDTH as GLsizei,
+				RESOLUTION_HEIGHT as GLsizei,
+			);
 			gl::ClearColor(0.0, 0.0, 0.0, 1.0);
 			gl::Clear(gl::COLOR_BUFFER_BIT);
 
@@ -172,11 +193,12 @@ impl AvkRenderManager {
 
 				self.unit_prog.bind();
 				self.textures[sprite.image_id as usize].bind();
-				self.unit_prog.set_uniform_vec2("pos", sprite.x as f32, sprite.y as f32);
+				self.unit_prog
+					.set_uniform_vec2("pos", sprite.x as f32, sprite.y as f32);
 				self.unit_prog.set_uniform_vec2(
 					"flip",
 					if sprite.get_flip_x() { -1.0 } else { 1.0 },
-					if sprite.get_flip_y() { -1.0 } else { 1.0 }
+					if sprite.get_flip_y() { -1.0 } else { 1.0 },
 				);
 
 				// helper function, because the code for sending palettes to the GPU is pretty bad
