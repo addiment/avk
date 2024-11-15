@@ -67,7 +67,7 @@ pub struct Tile {
 
 #[derive(Copy, Clone, Eq, Hash, PartialEq, Debug)]
 #[repr(C)]
-pub enum GamepadInput {
+pub enum AvkGamepadInput {
     DirUp,
     DirRight,
     DirDown,

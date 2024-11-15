@@ -60,9 +60,9 @@ impl Avk {
 		}
 	}
 
-	pub fn get_input(&self, player: Player, input: GamepadInput) -> bool {
+	pub fn get_input(&self, player: Player, input: AvkGamepadInput) -> bool {
 		unsafe {
-			mem::transmute::<*const c_void, extern "C" fn(avk: *const AvkRaw, player: Player, input: GamepadInput) -> bool>(AVK_GET_INPUT)(self.raw, player, input)
+			mem::transmute::<*const c_void, extern "C" fn(avk: *const AvkRaw, player: Player, input: AvkGamepadInput) -> bool>(AVK_GET_INPUT)(self.raw, player, input)
 			// avk_get_input(self.raw, player, input)
 		}
 	}

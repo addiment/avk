@@ -12,8 +12,7 @@ use std::ffi::*;
 use std::mem;
 use std::ptr::*;
 use log::{debug, warn};
-use avk_types::{GamepadInput, Player};
-use crate::avk_backend::AvkBackend;
+use avk_types::{AvkGamepadInput, Player};
 use crate::sdl::sys::*;
 use crate::sdl::window::{Window};
 
@@ -87,6 +86,7 @@ pub(super) enum Keycode {
 	PageDown,
 }
 
+/// Converts an SDL Keycode to the binding enumerated Keycode type.
 pub(super) fn sdl_keycode_to_keycode(value: SDL_Keycode) -> Keycode {
 	match value {
 		SDLK_RETURN => Keycode::Return,
@@ -138,10 +138,10 @@ pub(super) fn sdl_keycode_to_keycode(value: SDL_Keycode) -> Keycode {
 	}
 }
 
-#[allow(dead_code)]
-unsafe fn panic_sdl_error(format_string: &str) {
+/// Panics and prints the contents of SDL_GetError to the console.
+unsafe fn panic_sdl_error(format_string: &str) -> ! {
 	let err = SDL_GetError();
-	panic!("{} {}", format_string, if err == null() { String::from("No further information.") } else { CString::from_raw(err as *mut c_char).into_string().unwrap() });
+	panic!("{} {}", format_string, if err == null() { "No further information."} else { CStr::from_ptr(err as *mut c_char).to_str().unwrap() });
 }
 
 enum SdlProperty<'a> {
@@ -192,37 +192,37 @@ unsafe fn set_sdl_prop(props: SDL_PropertiesID, key: &[u8], value: SdlProperty) 
 	}
 }
 
-unsafe fn process_gamepad_button(event: &SDL_Event) -> Option<GamepadInput> {
+unsafe fn process_gamepad_button(event: &SDL_Event) -> Option<AvkGamepadInput> {
 	match event.gbutton.button as c_int {
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_NORTH => Some(GamepadInput::FaceUp),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_EAST  => Some(GamepadInput::FaceRight),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_SOUTH => Some(GamepadInput::FaceDown),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_WEST  => Some(GamepadInput::FaceLeft),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_NORTH => Some(AvkGamepadInput::FaceUp),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_EAST  => Some(AvkGamepadInput::FaceRight),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_SOUTH => Some(AvkGamepadInput::FaceDown),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_WEST  => Some(AvkGamepadInput::FaceLeft),
 
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_UP => Some(GamepadInput::DirUp),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_RIGHT => Some(GamepadInput::DirRight),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_DOWN => Some(GamepadInput::DirDown),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_LEFT => Some(GamepadInput::DirLeft),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_UP => Some(AvkGamepadInput::DirUp),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_RIGHT => Some(AvkGamepadInput::DirRight),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_DOWN => Some(AvkGamepadInput::DirDown),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_DPAD_LEFT => Some(AvkGamepadInput::DirLeft),
 
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_LEFT_SHOULDER => Some(GamepadInput::TriggerLeft),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER => Some(GamepadInput::TriggerRight),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_LEFT_SHOULDER => Some(AvkGamepadInput::TriggerLeft),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER => Some(AvkGamepadInput::TriggerRight),
 
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_BACK => Some(GamepadInput::Menu),
-		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_START => Some(GamepadInput::Menu),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_BACK => Some(AvkGamepadInput::Menu),
+		SDL_GamepadButton_SDL_GAMEPAD_BUTTON_START => Some(AvkGamepadInput::Menu),
 
 		_ => None,
 	}
 }
 
-pub struct Gman {
+pub struct SdlManager {
 	pub window: Window,
 	gamepads: Vec<(SDL_JoystickID, *mut SDL_Gamepad)>,
 	// TODO: fix joystick support by tracking previous state... grumble grumble
-	pub action_state_gp: [HashMap<GamepadInput, bool>; 4],
-	pub action_state_kb: [HashMap<GamepadInput, bool>; 4],
+	pub action_state_gp: [HashMap<AvkGamepadInput, bool>; 4],
+	pub action_state_kb: [HashMap<AvkGamepadInput, bool>; 4],
 }
 
-impl <'a> Gman<> {
+impl <'a> SdlManager<> {
 	pub fn new(
 		app_name: impl Into<String>,
 		app_version: impl Into<String>,
@@ -254,7 +254,7 @@ impl <'a> Gman<> {
 			// set OpenGL attributes
 			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_PROFILE_MASK, SDL_GLprofile_SDL_GL_CONTEXT_PROFILE_CORE as c_int);
 			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MINOR_VERSION, 4);
+			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MINOR_VERSION, 2);
 			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_DOUBLEBUFFER, 0);
 
 			let window = Window::init(width, height);
@@ -268,44 +268,46 @@ impl <'a> Gman<> {
 		}
 	}
 
-	/// Loads an OpenGL function by name
-	pub fn girls_loader(proc: &'static str) -> *const c_void {
+	/// Loads an OpenGL function by name.
+	/// Used by the Rust OpenGL crate.
+	pub fn gl_loader(proc: &'static str) -> *const c_void {
 		// null-terminate it
 		let proc = String::from(proc) + "\0";
 		let res = unsafe {
 			SDL_GL_GetProcAddress(proc.as_ptr() as *const c_char)
-				.unwrap_unchecked()
+				.unwrap()
 				as *const c_void
 		};
 		// println!("{proc} @ {:#x}", res as usize);
 		res
 	}
 
+	/// Updates the
 	fn keyboard_update(&mut self, event: SDL_KeyboardEvent) {
 		let player: Player;
-		let button: GamepadInput;
+		let button: AvkGamepadInput;
 		match sdl_keycode_to_keycode(event.key) {
-			Keycode::W => { player = Player::Alpha; button = GamepadInput::DirUp }
-			Keycode::A => { player = Player::Alpha; button = GamepadInput::DirLeft }
-			Keycode::S => { player = Player::Alpha; button = GamepadInput::DirDown }
-			Keycode::D => { player = Player::Alpha; button = GamepadInput::DirRight }
-			Keycode::Q => { player = Player::Alpha; button = GamepadInput::TriggerLeft }
-			Keycode::E => { player = Player::Alpha; button = GamepadInput::TriggerRight }
-			Keycode::Z => { player = Player::Alpha; button = GamepadInput::FaceLeft }
-			Keycode::C => { player = Player::Alpha; button = GamepadInput::FaceRight }
-			Keycode::X => { player = Player::Alpha; button = GamepadInput::FaceUp }
-			Keycode::V => { player = Player::Alpha; button = GamepadInput::FaceDown }
+			Keycode::W => { player = Player::Alpha; button = AvkGamepadInput::DirUp }
+			Keycode::A => { player = Player::Alpha; button = AvkGamepadInput::DirLeft }
+			Keycode::S => { player = Player::Alpha; button = AvkGamepadInput::DirDown }
+			Keycode::D => { player = Player::Alpha; button = AvkGamepadInput::DirRight }
+			Keycode::Q => { player = Player::Alpha; button = AvkGamepadInput::TriggerLeft }
+			Keycode::E => { player = Player::Alpha; button = AvkGamepadInput::TriggerRight }
+			Keycode::Z => { player = Player::Alpha; button = AvkGamepadInput::FaceLeft }
+			Keycode::C => { player = Player::Alpha; button = AvkGamepadInput::FaceRight }
+			Keycode::X => { player = Player::Alpha; button = AvkGamepadInput::FaceUp }
+			Keycode::V => { player = Player::Alpha; button = AvkGamepadInput::FaceDown }
 
-			Keycode::I => { player = Player::Bravo; button = GamepadInput::DirUp }
-			Keycode::J => { player = Player::Bravo; button = GamepadInput::DirLeft }
-			Keycode::K => { player = Player::Bravo; button = GamepadInput::DirDown }
-			Keycode::L => { player = Player::Bravo; button = GamepadInput::DirRight }
-			Keycode::U => { player = Player::Bravo; button = GamepadInput::TriggerLeft }
-			Keycode::O => { player = Player::Bravo; button = GamepadInput::TriggerRight }
-			Keycode::N => { player = Player::Bravo; button = GamepadInput::FaceLeft }
-			Keycode::M => { player = Player::Bravo; button = GamepadInput::FaceRight }
-			Keycode::Comma => { player = Player::Bravo; button = GamepadInput::FaceUp }
-			Keycode::Period => { player = Player::Bravo; button = GamepadInput::FaceDown }
+			Keycode::I => { player = Player::Bravo; button = AvkGamepadInput::DirUp }
+			Keycode::J => { player = Player::Bravo; button = AvkGamepadInput::DirLeft }
+			Keycode::K => { player = Player::Bravo; button = AvkGamepadInput::DirDown }
+			Keycode::L => { player = Player::Bravo; button = AvkGamepadInput::DirRight }
+			Keycode::U => { player = Player::Bravo; button = AvkGamepadInput::TriggerLeft }
+			Keycode::O => { player = Player::Bravo; button = AvkGamepadInput::TriggerRight }
+			Keycode::N => { player = Player::Bravo; button = AvkGamepadInput::FaceLeft }
+			Keycode::M => { player = Player::Bravo; button = AvkGamepadInput::FaceRight }
+			Keycode::Comma => { player = Player::Bravo; button = AvkGamepadInput::FaceUp }
+			Keycode::Period => { player = Player::Bravo; button = AvkGamepadInput::FaceDown }
 			_ => return
 		}
 
@@ -408,26 +410,26 @@ impl <'a> Gman<> {
 								match g_axis.axis as c_int {
 									SDL_GamepadAxis_SDL_GAMEPAD_AXIS_LEFTX => {
 										if g_axis.value > i16::MAX / 4 {
-											hm.insert(GamepadInput::DirRight, true);
-											hm.insert(GamepadInput::DirLeft, false);
+											hm.insert(AvkGamepadInput::DirRight, true);
+											hm.insert(AvkGamepadInput::DirLeft, false);
 										} else if g_axis.value < i16::MIN / 4 {
-											hm.insert(GamepadInput::DirRight, false);
-											hm.insert(GamepadInput::DirLeft, true);
+											hm.insert(AvkGamepadInput::DirRight, false);
+											hm.insert(AvkGamepadInput::DirLeft, true);
 										} else {
-											hm.insert(GamepadInput::DirRight, false);
-											hm.insert(GamepadInput::DirLeft, false);
+											hm.insert(AvkGamepadInput::DirRight, false);
+											hm.insert(AvkGamepadInput::DirLeft, false);
 										}
 									}
 									SDL_GamepadAxis_SDL_GAMEPAD_AXIS_LEFTY => {
 										if g_axis.value > i16::MAX / 4 {
-											hm.insert(GamepadInput::DirUp, false);
-											hm.insert(GamepadInput::DirDown, true);
+											hm.insert(AvkGamepadInput::DirUp, false);
+											hm.insert(AvkGamepadInput::DirDown, true);
 										} else if g_axis.value < i16::MIN / 4 {
-											hm.insert(GamepadInput::DirUp, true);
-											hm.insert(GamepadInput::DirDown, false);
+											hm.insert(AvkGamepadInput::DirUp, true);
+											hm.insert(AvkGamepadInput::DirDown, false);
 										} else {
-											hm.insert(GamepadInput::DirUp, false);
-											hm.insert(GamepadInput::DirDown, false);
+											hm.insert(AvkGamepadInput::DirUp, false);
+											hm.insert(AvkGamepadInput::DirDown, false);
 										}
 									}
 									_ => (),
@@ -486,7 +488,7 @@ impl <'a> Gman<> {
 	}
 }
 
-impl <'a> Drop for Gman<> {
+impl <'a> Drop for SdlManager<> {
 	fn drop(&mut self) {
 		// Destroy the window
 		if self.window.sdl_window != null_mut() {

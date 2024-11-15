@@ -1,5 +1,5 @@
 use std::ptr::{null, null_mut};
-use crate::gk::err_check;
+use crate::render::gl_err_check;
 use gl::types::{GLchar, GLsizei, GLuint};
 
 #[derive(Copy, Clone)]
@@ -23,14 +23,37 @@ impl Material {
 			gl::CreateShader(gl::VERTEX_SHADER)
 		};
 
-		unsafe fn ensure_shader_status(shader: GLuint) {
-			let mut success = 0;
-			let mut info_log = ['\0'; 1024];
-			gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut success);
-			if success != gl::TRUE as i32 {
-				gl::GetShaderInfoLog(shader, info_log.len() as GLsizei, null_mut(), info_log.as_mut_ptr() as *mut GLchar);
-				err_check();
-				panic!("OpenGL error: {success} \"{}\"", String::from_iter(info_log));
+		fn ensure_shader_status(shader: GLuint) {
+			unsafe {
+				let mut success = 0;
+				let mut info_log = ['\0'; 1024];
+				gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut success);
+				if success != gl::TRUE as i32 {
+					gl::GetShaderInfoLog(
+						shader,
+						info_log.len() as GLsizei,
+						null_mut(),
+						info_log.as_mut_ptr() as *mut GLchar
+					);
+					panic!("Failed to compile error: {success} \"{}\"", String::from_iter(info_log));
+				}
+			}
+		}
+
+		fn ensure_program_status(prog: GLuint) {
+			unsafe {
+				let mut success = 0;
+				let mut info_log = ['\0'; 512];
+				gl::GetProgramiv(prog, gl::LINK_STATUS, &mut success);
+				if success != gl::TRUE as i32 {
+					gl::GetProgramInfoLog(
+						prog,
+						info_log.len() as GLsizei,
+						null_mut(),
+						info_log.as_mut_ptr() as *mut GLchar
+					);
+					panic!("OpenGL error: {success} \"{}\"", String::from_iter(info_log));
+				}
 			}
 		}
 
@@ -44,22 +67,18 @@ impl Material {
 			ensure_shader_status(vert);
 
 			gl::AttachShader(prog, frag);
-			err_check();
+			gl_err_check();
 			gl::AttachShader(prog, vert);
-			err_check();
+			gl_err_check();
 			gl::LinkProgram(prog);
-			err_check();
-			{
-				let mut success = 0;
-				let mut info_log = ['\0'; 512];
-				gl::GetProgramiv(prog, gl::LINK_STATUS, &mut success);
-				err_check();
-				if success != gl::TRUE as i32 {
-					gl::GetProgramInfoLog(prog, 512, null_mut(), info_log.as_mut_ptr() as *mut GLchar);
-					err_check();
-					panic!("OpenGL error: {success} {}", String::from_iter(info_log));
-				}
-			}
+			gl_err_check();
+			ensure_program_status(prog);
+
+			// cleanup
+			gl::DetachShader(prog, frag);
+			gl::DetachShader(prog, vert);
+			gl::DeleteShader(frag);
+			gl::DeleteShader(vert);
 		}
 
 		Self {

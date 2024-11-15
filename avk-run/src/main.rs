@@ -12,10 +12,10 @@ use crate::c_binds::{
 };
 
 mod sdl;
-mod gk;
+mod render;
 mod logchamp;
 mod c_binds;
-mod avk_backend;
+mod backend;
 
 fn main() {
     logchamp::init().unwrap();

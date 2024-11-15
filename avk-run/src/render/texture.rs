@@ -3,25 +3,20 @@ use std::ffi::c_void;
 use gl::types::{GLint, GLsizei, GLuint};
 use avk_types::{IMAGE_SIZE, MAX_IMAGES};
 use avk_types::prelude::Image;
+use crate::render::gl_err_check;
 
 #[derive(Copy, Clone)]
 pub(crate) struct Texture {
-	// data: [Image; Image::PIXEL_COUNT],
 	texture_handle: GLuint,
 }
 
 impl Texture {
+	/// Loads all the images from an array of AVK indexed-images
 	pub fn new_bulk(data: &mut [Image; MAX_IMAGES]) -> [Self; MAX_IMAGES] {
 		let mut texture_ids: [GLuint; MAX_IMAGES] = [0; MAX_IMAGES];
 		unsafe {
 			gl::CreateTextures(gl::TEXTURE_2D, MAX_IMAGES as GLsizei, texture_ids.as_mut_ptr());
-			let err = gl::GetError();
-			if err != gl::NO_ERROR {
-				let err_str = gl::GetString(err);
-				println!("{}", err_str as usize);
-				// println!("{}", CStr::from_ptr( as *const c_char).to_str().unwrap());
-				panic!("GL error: {err}")
-			}
+			gl_err_check();
 		}
 
 		let textures = from_fn(|i| {
@@ -30,15 +25,21 @@ impl Texture {
 				gl::TexImage2D(
 					gl::TEXTURE_2D,
 					0,
+					// one u8 red channel
 					gl::R8 as GLint,
 					IMAGE_SIZE as GLsizei,
 					IMAGE_SIZE as GLsizei,
 					0,
+					// grayscale red
 					gl::RED,
+					// u8
 					gl::UNSIGNED_BYTE,
 					data[i].0.as_mut_ptr() as *mut c_void
 				);
+				gl_err_check();
+				// image won't show up without this. damn you, OpenGL!
 				gl::GenerateMipmap(gl::TEXTURE_2D);
+				gl_err_check();
 			}
 			Texture { texture_handle: texture_ids[i] }
 		});

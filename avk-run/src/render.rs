@@ -7,12 +7,14 @@ mod texture;
 use std::ffi::{c_void, CStr};
 use std::ptr::{null};
 use gl::types::{GLchar, GLenum, GLfloat, GLint, GLsizei,GLuint, GLushort};
+use log::error;
 use avk_types::{u16_to_rgba, MAX_IMAGES, MAX_PALETTES, RESOLUTION_HEIGHT, RESOLUTION_WIDTH};
 use avk_types::prelude::{Image, Palette};
-use crate::avk_backend::AvkBackend;
-use crate::gk::material::Material;
-use crate::gk::mesh::Mesh;
-use crate::gk::texture::Texture;
+use crate::backend::AvkBackend;
+
+use crate::render::material::Material;
+use crate::render::mesh::Mesh;
+use crate::render::texture::Texture;
 
 const UNIT_MESH: [GLfloat; 8] = [
 	0.0, 0.0,
@@ -37,7 +39,7 @@ const VIEW_VERT_SOURCE: &str = concat!(include_str!("shaders/view_vert.glsl"), "
 const VIEW_FRAG_SOURCE: &str = concat!(include_str!("shaders/view_frag.glsl"), "\0");
 
 #[inline(always)]
-pub fn err_check() {
+pub fn gl_err_check() {
 	unsafe {
 		let err = gl::GetError();
 		if err != gl::NO_ERROR {
@@ -47,7 +49,7 @@ pub fn err_check() {
 }
 
 #[derive(Clone)]
-pub(crate) struct GirlsKissing {
+pub(crate) struct AvkRenderManager {
 	textures: [Texture; MAX_IMAGES],
 	unit_quad: Mesh,
 	unit_prog: Material,
@@ -57,7 +59,9 @@ pub(crate) struct GirlsKissing {
 	fbt: GLuint,
 }
 
-extern "system" fn girl_kisser_alert(
+/// Called by OpenGL whenever an error occurs.
+/// Prints a message to stderr containing some brief information regarding the error.
+extern "system" fn opengl_error_hook(
 	source: GLenum,
 	gl_type: GLenum,
 	_id: GLuint,
@@ -68,21 +72,26 @@ extern "system" fn girl_kisser_alert(
 ) {
 	unsafe {
 		let cstr = CStr::from_ptr(message).to_str().unwrap().to_owned();
-		eprintln!("!!! OPENGL ERROR !!!\nsource: {source}, gl_type: {gl_type}\n\"{}\"", cstr);
+		error!("!!! OpenGL error !!!\nsource: {source}, gl_type: {gl_type}\n\"{}\"", cstr);
 	}
 }
 
-impl GirlsKissing {
+impl AvkRenderManager {
+	/// Initializes the OpenGL state related to AVK.
 	// TODO: generate a texture using the palettes so we can use two samplers instead of 8 vec4s
 	pub fn init(images: &mut [Image; MAX_IMAGES], _palettes: &[Palette; MAX_PALETTES], loader: fn(&'static str) -> *const c_void) -> Self {
 		gl::load_with(loader);
-		err_check();
+		gl_err_check();
 
 		unsafe {
-			gl::Enable(gl::DEBUG_OUTPUT);
-			gl::Enable(gl::DEBUG_OUTPUT_SYNCHRONOUS);
-			gl::DebugMessageCallback(Some(girl_kisser_alert), null());
-
+			// TODO: only call this when we're willing to take the perf hit
+			{
+				// Setup OpenGL to use all the fancy debugging hooks it has
+				gl::Enable(gl::DEBUG_OUTPUT);
+				gl::Enable(gl::DEBUG_OUTPUT_SYNCHRONOUS);
+				gl::DebugMessageCallback(Some(opengl_error_hook), null());
+			}
+				
 			let mut rbo = 0;
 			let mut fbo = 0;
 			let mut fbt = 0;
@@ -129,11 +138,12 @@ impl GirlsKissing {
 			Self {
 				fbo,
 				fbt,
+				// create ALL THE TEXTURES!!!
 				textures: Texture::new_bulk(images),
 
 				unit_quad: Mesh::new(4, &UNIT_MESH, &SQUARE_MESH_ELEMENTS),
 				unit_prog: Material::new(QUAD_FRAG_SOURCE, QUAD_VERT_SOURCE),
-
+				
 				viewport_quad: Mesh::new(4, &VIEWPORT_MESH, &SQUARE_MESH_ELEMENTS),
 				viewport_prog: Material::new(VIEW_FRAG_SOURCE, VIEW_VERT_SOURCE),
 			}
@@ -169,30 +179,25 @@ impl GirlsKissing {
 					if sprite.get_flip_y() { -1.0 } else { 1.0 }
 				);
 
-				let c0 = u16_to_rgba(palette[0]);
-				let c1 = u16_to_rgba(palette[1]);
-				let c2 = u16_to_rgba(palette[2]);
-				let c3 = u16_to_rgba(palette[3]);
-				let c4 = u16_to_rgba(palette[4]);
-				let c5 = u16_to_rgba(palette[5]);
-				let c6 = u16_to_rgba(palette[6]);
-				let c7 = u16_to_rgba(palette[7]);
-
-				fn dry_peppers(material: &mut Material, name: &str, arr: &[u8; 4]) {
+				// helper function, because the code for sending palettes to the GPU is pretty bad
+				fn set_color(material: &mut Material, name: &str, arr: &[u8; 4]) {
 					material.set_uniform_vec4(
 						name,
-						arr[0] as f32 / 15.0, arr[1] as f32 / 15.0, arr[2] as f32 / 15.0, arr[3] as f32 / 15.0,
+						arr[0] as f32 / 15.0,
+						arr[1] as f32 / 15.0,
+						arr[2] as f32 / 15.0,
+						arr[3] as f32 / 15.0,
 					);
 				}
 
-				dry_peppers(&mut self.unit_prog, "palette_0", &c0);
-				dry_peppers(&mut self.unit_prog, "palette_1", &c1);
-				dry_peppers(&mut self.unit_prog, "palette_2", &c2);
-				dry_peppers(&mut self.unit_prog, "palette_3", &c3);
-				dry_peppers(&mut self.unit_prog, "palette_4", &c4);
-				dry_peppers(&mut self.unit_prog, "palette_5", &c5);
-				dry_peppers(&mut self.unit_prog, "palette_6", &c6);
-				dry_peppers(&mut self.unit_prog, "palette_7", &c7);
+				set_color(&mut self.unit_prog, "palette_0", &u16_to_rgba(palette[0]));
+				set_color(&mut self.unit_prog, "palette_1", &u16_to_rgba(palette[1]));
+				set_color(&mut self.unit_prog, "palette_2", &u16_to_rgba(palette[2]));
+				set_color(&mut self.unit_prog, "palette_3", &u16_to_rgba(palette[3]));
+				set_color(&mut self.unit_prog, "palette_4", &u16_to_rgba(palette[4]));
+				set_color(&mut self.unit_prog, "palette_5", &u16_to_rgba(palette[5]));
+				set_color(&mut self.unit_prog, "palette_6", &u16_to_rgba(palette[6]));
+				set_color(&mut self.unit_prog, "palette_7", &u16_to_rgba(palette[7]));
 
 				self.unit_quad.draw();
 			}
@@ -210,7 +215,7 @@ impl GirlsKissing {
 
 			gl::Finish();
 
-			err_check();
+			gl_err_check();
 		}
 	}
 }

@@ -176,11 +176,11 @@ pub extern "C" fn avk_main() {
 		// let delta = 1.0;
 
 		let s_time = avk.get_time() as f32 / 4000.0;
-		let alpha_up = avk.get_input(Player::Alpha, GamepadInput::DirUp);
-		let alpha_down = avk.get_input(Player::Alpha, GamepadInput::DirDown);
+		let alpha_up = avk.get_input(Player::Alpha, AvkGamepadInput::DirUp);
+		let alpha_down = avk.get_input(Player::Alpha, AvkGamepadInput::DirDown);
 
-		let bravo_up = avk.get_input(Player::Bravo, GamepadInput::DirUp);
-		let bravo_down = avk.get_input(Player::Bravo, GamepadInput::DirDown);
+		let bravo_up = avk.get_input(Player::Bravo, AvkGamepadInput::DirUp);
+		let bravo_down = avk.get_input(Player::Bravo, AvkGamepadInput::DirDown);
 
 		let speed = 256.0;
 

@@ -16,7 +16,14 @@ impl log::Log for LogChamp {
 				Level::Debug => "\x1b[36m",
 				Level::Trace => "\x1b[90m",
 			};
-			println!("{color}[{0}]: {1}\x1b[0m", record.level(), record.args());
+			match record.level() {
+				Level::Error | Level::Warn => {
+					eprintln!("{color}[{0}]: {1}\x1b[0m", record.level(), record.args());
+				}
+				Level::Info | Level::Debug | Level::Trace => {
+					println!("{color}[{0}]: {1}\x1b[0m", record.level(), record.args());
+				}
+			}
 		}
 	}
 

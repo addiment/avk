@@ -1,11 +1,12 @@
 use std::ffi::c_void;
 use std::mem;
-use avk_types::{AvkRaw, GamepadInput, Player, BACKGROUND_CANVAS_SIZE, MAX_SPRITES};
+use avk_types::{AvkRaw, AvkGamepadInput, Player, BACKGROUND_CANVAS_SIZE, MAX_SPRITES};
 use avk_types::prelude::{Image, Palette};
-use crate::avk_backend::AvkBackend;
+use crate::backend::AvkBackend;
 
 #[no_mangle]
 pub extern "C" fn avk_init(images: *const Image, palettes: *const Palette) -> *mut AvkRaw {
+	// this function should probably undergo SERIOUS review...
 	unsafe {
 		let mut avk: Box<AvkBackend> = Box::new(AvkBackend::init(
 			mem::transmute(images),
@@ -45,7 +46,7 @@ pub extern "C" fn avk_get_time(avk: *const AvkRaw) -> u64 {
 	}
 }
 
-pub extern "C" fn avk_get_input(avk: *const AvkRaw, player: Player, input: GamepadInput) -> bool {
+pub extern "C" fn avk_get_input(avk: *const AvkRaw, player: Player, input: AvkGamepadInput) -> bool {
 	unsafe {
 		let avk = &*((*avk).internal as *const AvkBackend);
 		avk.get_input(player, input)

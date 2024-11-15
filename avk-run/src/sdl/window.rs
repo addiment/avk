@@ -1,9 +1,6 @@
-use std::ffi::{c_char, c_int, c_void, CStr};
+use std::ffi::{c_char, c_int};
 use std::ptr::null_mut;
 use crate::sdl::{panic_sdl_error, set_sdl_prop, SdlProperty};
-// use std::num::NonZeroIsize;
-// use std::ptr::NonNull;
-// use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle, WaylandDisplayHandle, WaylandWindowHandle, Win32WindowHandle, WindowHandle, WindowsDisplayHandle, XlibDisplayHandle, XlibWindowHandle};
 use crate::sdl::sys::*;
 
 #[derive(Copy, Clone)]
@@ -34,8 +31,13 @@ impl Window {
 			// Create OpenGL context for window
 			let gl_context = SDL_GL_CreateContext(sdl_window);
 			if gl_context == null_mut() {
-				panic!("no bitches?");
+				panic_sdl_error("Failed to create OpenGL context!");
 			}
+
+			// from the docs:
+			// 0 for immediate updates
+			// 1 for updates synchronized with the vertical retrace
+			// -1 for adaptive vsync
 			SDL_GL_SetSwapInterval(1);
 
 			Window {
@@ -77,7 +79,7 @@ impl Window {
 		self.height
 	}
 
-	
+
 	pub fn set_title(&mut self, title: impl Into<String>) {
 		unsafe {
 			SDL_SetWindowTitle(self.sdl_window, title.into().as_ptr() as *const c_char);

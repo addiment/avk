@@ -5,5 +5,5 @@ pub use crate::{
 	sprite::Sprite,
 	image::Image,
 	palette::Palette,
-	GamepadInput,
+	AvkGamepadInput,
 };
