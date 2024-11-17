@@ -1,1 +1,0 @@
-// TODO: allow for pairing the ROM and the runner to make distribution easier

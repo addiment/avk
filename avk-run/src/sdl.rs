@@ -246,12 +246,12 @@ impl<'a> SdlManager {
 
 			// set OpenGL attributes
 			SDL_GL_SetAttribute(
-				SDL_GLattr_SDL_GL_CONTEXT_PROFILE_MASK,
-				SDL_GLprofile_SDL_GL_CONTEXT_PROFILE_CORE as c_int,
+				SDL_GLAttr_SDL_GL_CONTEXT_PROFILE_MASK,
+				SDL_GL_CONTEXT_PROFILE_CORE as c_int,
 			);
-			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_CONTEXT_MINOR_VERSION, 2);
-			SDL_GL_SetAttribute(SDL_GLattr_SDL_GL_DOUBLEBUFFER, 0);
+			SDL_GL_SetAttribute(SDL_GLAttr_SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+			SDL_GL_SetAttribute(SDL_GLAttr_SDL_GL_CONTEXT_MINOR_VERSION, 2);
+			SDL_GL_SetAttribute(SDL_GLAttr_SDL_GL_DOUBLEBUFFER, 0);
 
 			let window = Window::init(width, height);
 
