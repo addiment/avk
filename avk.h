@@ -87,7 +87,7 @@ typedef struct AvkRaw {
 typedef uint8_t Image[256];
 typedef uint16_t Palette[4];
 
-// Function pointers. Must be exported so
+// Function pointers to be filled in  by the AVK loader.
 AVK_EXPORT void *AVK_INIT = 0;
 AVK_EXPORT void *AVK_DROP = 0;
 AVK_EXPORT void *AVK_UPDATE = 0;

@@ -24,8 +24,12 @@ impl AvkBackend {
 	pub fn init(images: &[Image; MAX_IMAGES], palettes: &[Palette; MAX_PALETTES]) -> Self {
 		let mut images = images.clone();
 		let mut palettes = palettes.clone();
-		let gman = SdlManager::new("AK Virtual Console", "1.0.0", "computer.living.ak");
-		let girls_kissing =
+		let sdl_manager = SdlManager::new(
+			"AVK Virtual Console",
+			"1.0.0",
+			"computer.living.avk"
+		);
+		let render_manager =
 			AvkRenderManager::init(&mut images, &mut palettes, SdlManager::gl_loader);
 
 		Self {
@@ -48,12 +52,15 @@ impl AvkBackend {
 					AvkGamepadInput::DirDown,
 					AvkGamepadInput::DirLeft,
 					AvkGamepadInput::DirRight,
+
 					AvkGamepadInput::FaceUp,
 					AvkGamepadInput::FaceDown,
 					AvkGamepadInput::FaceLeft,
 					AvkGamepadInput::FaceRight,
+
 					AvkGamepadInput::TriggerLeft,
 					AvkGamepadInput::TriggerRight,
+
 					AvkGamepadInput::Menu,
 				] {
 					hm.insert(e, false);
@@ -61,8 +68,8 @@ impl AvkBackend {
 
 				hm
 			}),
-			sdl_manager: gman,
-			render_manager: girls_kissing,
+			sdl_manager,
+			render_manager,
 		}
 	}
 
@@ -93,6 +100,7 @@ impl AvkBackend {
 
 	pub fn update(&mut self) -> bool {
 		// silly!!! breaking mutability rules!!! I don't care!!!
+		// TODO: I do actually care about mutability rules...
 		let this = self as *mut Self;
 		self.render_manager.update(
 			this,

@@ -236,6 +236,7 @@ impl AvkRenderManager {
 			self.viewport_quad.draw();
 
 			gl::Finish();
+			// gl::Flush();
 
 			gl_err_check();
 		}
